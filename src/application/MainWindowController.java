@@ -1,16 +1,11 @@
 package application;
 
-import java.io.Console;
-import java.io.File;
 import java.io.PrintStream;
 
 /**
  * Sample Skeleton for 'MainWindow.fxml' Controller Class. Mine for the copying and pasting
  */
 
-
-import java.net.URL;
-import java.util.ResourceBundle;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -31,272 +26,318 @@ import javafx.scene.web.WebView;
 import util.TextAreaOutputStream;
 import util.SmartPrintStream;
 
-public class MainWindowController {
+public class MainWindowController 
+{
 
-	@FXML // ResourceBundle that was given to the FXMLLoader
-	private ResourceBundle resources;
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////// FXML OBJECTS /////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	
+    @FXML // fx:id="overviewPage"
+    private Tab overviewPage; // Value injected by FXMLLoader
 
-	@FXML // URL location of the FXML file that was given to the FXMLLoader
-	private URL location;
+    @FXML // fx:id="globalCostSclEntry"
+    private TextField globalCostSclEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="overviewPage"
-	private Tab overviewPage; // Value injected by FXMLLoader
+    @FXML // fx:id="stdSongCooldownEntry"
+    private TextField stdSongCooldownEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="globalCostSclEntry"
-	private TextField globalCostSclEntry; // Value injected by FXMLLoader
+    @FXML // fx:id="syserrLogTxtbox"
+    private TextArea syserrLogTxtbox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="stdSongCooldownEntry"
-	private TextField stdSongCooldownEntry; // Value injected by FXMLLoader
+    @FXML // fx:id="databasePage"
+    private Tab databasePage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="databasePage"
-	private Tab databasePage; // Value injected by FXMLLoader
+    @FXML // fx:id="songOverrideHistoryExpireMinsCol"
+    private TableColumn<?, ?> songOverrideHistoryExpireMinsCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideHistoryExpireMinsCol"
-	private TableColumn<?, ?> songOverrideHistoryExpireMinsCol; // Value injected by FXMLLoader
+    @FXML // fx:id="currentQueueUsernameCol"
+    private TableColumn<?, ?> currentQueueUsernameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueUsernameCol"
-	private TableColumn<?, ?> currentQueueUsernameCol; // Value injected by FXMLLoader
+    @FXML // fx:id="requestManualBtn"
+    private ToggleButton requestManualBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="requestManualBtn"
-	private ToggleButton requestManualBtn; // Value injected by FXMLLoader
+    @FXML // fx:id="vipUsersPage"
+    private Tab vipUsersPage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersPage"
-	private Tab vipUsersPage; // Value injected by FXMLLoader
+    @FXML // fx:id="databaseWebView"
+    private WebView databaseWebView; // Value injected by FXMLLoader
 
-	@FXML // fx:id="databaseWebView"
-	private WebView databaseWebView; // Value injected by FXMLLoader
+    @FXML // fx:id="freeRequestsBox"
+    private CheckBox freeRequestsBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="freeRequestsBox"
-	private CheckBox freeRequestsBox; // Value injected by FXMLLoader
+    @FXML // fx:id="baseImmediateReplaySclEntry"
+    private TextField baseImmediateReplaySclEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="baseImmediateReplaySclEntry"
-	private TextField baseImmediateReplaySclEntry; // Value injected by FXMLLoader
+    @FXML // fx:id="viewSysoLogBtn"
+    private Button viewSysoLogBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersNoteCol"
-	private TableColumn<?, ?> vipUsersNoteCol; // Value injected by FXMLLoader
+    @FXML // fx:id="vipUsersNoteCol"
+    private TableColumn<?, ?> vipUsersNoteCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="ignoreHistoryBox"
-	private CheckBox ignoreHistoryBox; // Value injected by FXMLLoader
+    @FXML // fx:id="ignoreHistoryBox"
+    private CheckBox ignoreHistoryBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersUserIDCol"
-	private TableColumn<?, ?> vipUsersUserIDCol; // Value injected by FXMLLoader
+    @FXML // fx:id="vipUsersUserIDCol"
+    private TableColumn<?, ?> vipUsersUserIDCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueOpenBox"
-	private CheckBox queueOpenBox; // Value injected by FXMLLoader
+    @FXML // fx:id="queueOpenBox"
+    private CheckBox queueOpenBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueCloseMinsEntry"
-	private TextField queueCloseMinsEntry; // Value injected by FXMLLoader
+    @FXML // fx:id="queueCloseMinsEntry"
+    private TextField queueCloseMinsEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="tabPage"
-	private TabPane tabPage; // Value injected by FXMLLoader
+    @FXML // fx:id="tabPage"
+    private TabPane tabPage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistUserIDCol"
-	private TableColumn<?, ?> userBlacklistUserIDCol; // Value injected by FXMLLoader
+    @FXML // fx:id="userBlacklistUserIDCol"
+    private TableColumn<?, ?> userBlacklistUserIDCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="exportQueueBtn"
-	private Button exportQueueBtn; // Value injected by FXMLLoader
+    @FXML // fx:id="exportQueueBtn"
+    private Button exportQueueBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="sysoLogTxtbox"
-	private TextArea sysoLogTxtbox; // Value injected by FXMLLoader
+    @FXML // fx:id="currentQueueNameCol"
+    private TableColumn<?, ?> currentQueueNameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueNameCol"
-	private TableColumn<?, ?> currentQueueNameCol; // Value injected by FXMLLoader
+    @FXML // fx:id="baseSongPriceMinEntry"
+    private TextField baseSongPriceMinEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="baseSongPriceMinEntry"
-	private TextField baseSongPriceMinEntry; // Value injected by FXMLLoader
+    @FXML // fx:id="revertParamsBtn"
+    private Button revertParamsBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="revertParamsBtn"
-	private Button revertParamsBtn; // Value injected by FXMLLoader
+    @FXML // fx:id="queueSizeLabel"
+    private Label queueSizeLabel; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueSizeLabel"
-	private Label queueSizeLabel; // Value injected by FXMLLoader
+    @FXML // fx:id="sysoLogTxtbox"
+    private TextArea sysoLogTxtbox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="baseHistoryExpireMinsEntry"
-	private TextField baseHistoryExpireMinsEntry; // Value injected by FXMLLoader
+    @FXML // fx:id="baseHistoryExpireMinsEntry"
+    private TextField baseHistoryExpireMinsEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueOSTCol"
-	private TableColumn<?, ?> currentQueueOSTCol; // Value injected by FXMLLoader
+    @FXML // fx:id="currentQueueOSTCol"
+    private TableColumn<?, ?> currentQueueOSTCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueOpenMinsEntry"
-	private TextField queueOpenMinsEntry; // Value injected by FXMLLoader
+    @FXML // fx:id="queueOpenMinsEntry"
+    private TextField queueOpenMinsEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistTimeBannedCol"
-	private TableColumn<?, ?> userBlacklistTimeBannedCol; // Value injected by FXMLLoader
+    @FXML // fx:id="userBlacklistTimeBannedCol"
+    private TableColumn<?, ?> userBlacklistTimeBannedCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="percentRandomSlider"
-	private Slider percentRandomSlider; // Value injected by FXMLLoader
+    @FXML // fx:id="percentRandomSlider"
+    private Slider percentRandomSlider; // Value injected by FXMLLoader
 
-	@FXML // fx:id="syserrLogTxtbox"
-	private TextArea syserrLogTxtbox; // Value injected by FXMLLoader
+    @FXML // fx:id="clearSysoConsoleBtn"
+    private Button clearSysoConsoleBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideBaseCostCol"
-	private TableColumn<?, ?> songOverrideBaseCostCol; // Value injected by FXMLLoader
+    @FXML // fx:id="songOverrideBaseCostCol"
+    private TableColumn<?, ?> songOverrideBaseCostCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="viewSysoLogBtn"
-	private Button viewSysoLogBtn; // Value injected by FXMLLoader
+    @FXML // fx:id="viewSyserrLogBtn"
+    private Button viewSyserrLogBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueue"
-	private TableView<?> currentQueue; // Value injected by FXMLLoader
+    @FXML // fx:id="currentQueue"
+    private TableView<?> currentQueue; // Value injected by FXMLLoader
 
-	@FXML // fx:id="dontRecordHistoryBox"
-	private CheckBox dontRecordHistoryBox; // Value injected by FXMLLoader
+    @FXML // fx:id="dontRecordHistoryBox"
+    private CheckBox dontRecordHistoryBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistPage"
-	private Tab userBlacklistPage; // Value injected by FXMLLoader
+    @FXML // fx:id="userBlacklistPage"
+    private Tab userBlacklistPage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistTable"
-	private TableView<?> userBlacklistTable; // Value injected by FXMLLoader
+    @FXML // fx:id="userBlacklistTable"
+    private TableView<?> userBlacklistTable; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersCostSclCol"
-	private TableColumn<?, ?> vipUsersCostSclCol; // Value injected by FXMLLoader
+    @FXML // fx:id="vipUsersCostSclCol"
+    private TableColumn<?, ?> vipUsersCostSclCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueUserIDCol"
-	private TableColumn<?, ?> currentQueueUserIDCol; // Value injected by FXMLLoader
+    @FXML // fx:id="currentQueueUserIDCol"
+    private TableColumn<?, ?> currentQueueUserIDCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverridePage"
-	private Tab songOverridePage; // Value injected by FXMLLoader
+    @FXML // fx:id="songOverridePage"
+    private Tab songOverridePage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideImmediateRelaySclCol"
-	private TableColumn<?, ?> songOverrideImmediateRelaySclCol; // Value injected by FXMLLoader
+    @FXML // fx:id="songOverrideImmediateRelaySclCol"
+    private TableColumn<?, ?> songOverrideImmediateRelaySclCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="viewSyserrLogBtn"
-	private Button viewSyserrLogBtn; // Value injected by FXMLLoader
+    @FXML // fx:id="requestsAutoBox"
+    private CheckBox requestsAutoBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="requestsAutoBox"
-	private CheckBox requestsAutoBox; // Value injected by FXMLLoader
+    @FXML // fx:id="userBlacklistNoteCol"
+    private TableColumn<?, ?> userBlacklistNoteCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistNoteCol"
-	private TableColumn<?, ?> userBlacklistNoteCol; // Value injected by FXMLLoader
+    @FXML // fx:id="stdUserCooldownEntry"
+    private TextField stdUserCooldownEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="stdUserCooldownEntry"
-	private TextField stdUserCooldownEntry; // Value injected by FXMLLoader
+    @FXML // fx:id="currentQueueTimeRequestedCol"
+    private TableColumn<?, ?> currentQueueTimeRequestedCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueTimeRequestedCol"
-	private TableColumn<?, ?> currentQueueTimeRequestedCol; // Value injected by FXMLLoader
+    @FXML // fx:id="songOverrideSongNameCol"
+    private TableColumn<?, ?> songOverrideSongNameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideSongNameCol"
-	private TableColumn<?, ?> songOverrideSongNameCol; // Value injected by FXMLLoader
+    @FXML // fx:id="reqManualControl"
+    private ToggleGroup reqManualControl; // Value injected by FXMLLoader
 
-	@FXML // fx:id="reqManualControl"
-	private ToggleGroup reqManualControl; // Value injected by FXMLLoader
+    @FXML // fx:id="songOverrideTable"
+    private TableView<?> songOverrideTable; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideTable"
-	private TableView<?> songOverrideTable; // Value injected by FXMLLoader
+    @FXML // fx:id="vipUsersUsernameCol"
+    private TableColumn<?, ?> vipUsersUsernameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersUsernameCol"
-	private TableColumn<?, ?> vipUsersUsernameCol; // Value injected by FXMLLoader
+    @FXML // fx:id="currentQueuePriorityCol"
+    private TableColumn<?, ?> currentQueuePriorityCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueuePriorityCol"
-	private TableColumn<?, ?> currentQueuePriorityCol; // Value injected by FXMLLoader
+    @FXML // fx:id="requestSessionPctFullBar"
+    private ProgressBar requestSessionPctFullBar; // Value injected by FXMLLoader
 
-	@FXML // fx:id="requestSessionPctFullBar"
-	private ProgressBar requestSessionPctFullBar; // Value injected by FXMLLoader
+    @FXML // fx:id="queueLengthLabel"
+    private Label queueLengthLabel; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueLengthLabel"
-	private Label queueLengthLabel; // Value injected by FXMLLoader
+    @FXML // fx:id="userBlacklistUsernameCol"
+    private TableColumn<?, ?> userBlacklistUsernameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistUsernameCol"
-	private TableColumn<?, ?> userBlacklistUsernameCol; // Value injected by FXMLLoader
+    @FXML // fx:id="songOverrideOwningOSTCol"
+    private TableColumn<?, ?> songOverrideOwningOSTCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideOwningOSTCol"
-	private TableColumn<?, ?> songOverrideOwningOSTCol; // Value injected by FXMLLoader
+    @FXML // fx:id="vipUsersTable"
+    private TableView<?> vipUsersTable; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersTable"
-	private TableView<?> vipUsersTable; // Value injected by FXMLLoader
+    @FXML // fx:id="clearSyserrConsoleBtn"
+    private Button clearSyserrConsoleBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="saveParamsBtn"
-	private Button saveParamsBtn; // Value injected by FXMLLoader
+    @FXML // fx:id="saveParamsBtn"
+    private Button saveParamsBtn; // Value injected by FXMLLoader
+    
+    
+    
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////// FXML METHODS /////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    
+    
+    
+    
+    
 
-	@FXML
-	void viewSysoLogOnAction(ActionEvent event) {
+    @FXML
+    void viewSysoLogOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void viewSyserrLogOnAction(ActionEvent event) {
+    /**
+     * Clears the system.out console
+     * @param event
+     */
+    @FXML
+    void clearSysoLogConsoleBtnOnAction(ActionEvent event) { sysoLogTxtbox.clear(); }
 
-	}
+    @FXML
+    void viewSyserrLogOnAction(ActionEvent event) {
 
-	@FXML
-	void queueOpenMinsOnAction(ActionEvent event) {
+    }
 
-	}
+    
+    /**
+     * Clears the system.err console
+     * @param event
+     */
+    @FXML
+    void clearSyserrConsoleBtnOnAction(ActionEvent event) { syserrLogTxtbox.clear(); }
 
-	@FXML
-	void queueCloseMinsOnAction(ActionEvent event) {
+    @FXML
+    void queueOpenMinsOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void stdSongCooldownOnAction(ActionEvent event) {
+    @FXML
+    void queueCloseMinsOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void stdUserCooldownOnAction(ActionEvent event) {
+    @FXML
+    void stdSongCooldownOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void globalCostSclOnAction(ActionEvent event) {
+    @FXML
+    void stdUserCooldownOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void baseSongPriceMinOnAction(ActionEvent event) {
+    @FXML
+    void globalCostSclOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void baseHistoryExpireMinsOnAction(ActionEvent event) {
+    @FXML
+    void baseSongPriceMinOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void baseImmediateReplaySclOnAction(ActionEvent event) {
+    @FXML
+    void baseHistoryExpireMinsOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void requestsAutoBoxOnAction(ActionEvent event) 
-	{
+    @FXML
+    void baseImmediateReplaySclOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void requestManualBtnOnAction(ActionEvent event) {
+    @FXML
+    void requestsAutoBoxOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void freeRequestsBoxOnAction(ActionEvent event) {
+    @FXML
+    void requestManualBtnOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void ignoreHistoryBoxOnAction(ActionEvent event) {
+    @FXML
+    void freeRequestsBoxOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void dontRecordHistoryBoxOnAction(ActionEvent event) {
+    @FXML
+    void ignoreHistoryBoxOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void saveParamsBtnOnAction(ActionEvent event) {
+    @FXML
+    void dontRecordHistoryBoxOnAction(ActionEvent event) {
 
-	}
+    }
 
-	@FXML
-	void revertParamsBtnOnAction(ActionEvent event) {
+    @FXML
+    void saveParamsBtnOnAction(ActionEvent event) 
+    {
+    	System.out.println("Saving configuration parameters...");
+    	this.writeConfigParams();
+    }
 
-	}
+    @FXML
+    void revertParamsBtnOnAction(ActionEvent event) 
+    { 
+    	System.out.println("Reverting configuration parameters...");
+    	this.loadConfigParams();
+    }
 
-	@FXML
-	void exportQueueBtnOnAction(ActionEvent event) {
+    @FXML
+    void exportQueueBtnOnAction(ActionEvent event) {
 
-	}
+    }
+    
+    
+    
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////  REGULAR METHODS ///////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    
 
 	@FXML // This method is called by the FXMLLoader when initialization is complete
 	void initialize() 
@@ -313,12 +354,59 @@ public class MainWindowController {
 		System.setErr(newErr);
 		
 		System.out.println("Initializing primary controller...");
-		System.err.println("An error");
+		
+		// test some database stuff
+		//System.out.println(Main.db.resultsToString(Main.db.execRawQuery("SELECT * FROM viewers WHERE coins > 5000;")));
+		
+		loadConfigParams();
+		
 
 	}
 
 
-
+	/**
+	 * Loads all of the configuration parameters from the database to the UI
+	 */
+	private void loadConfigParams()
+	{
+		System.out.println("Loading configuration parameters...");
+		
+		this.percentRandomSlider.setValue(Main.db.readRealParam("percentRandom"));
+		this.queueOpenMinsEntry.setText(Main.db.readStringParam("queueOpenMins"));
+		this.queueCloseMinsEntry.setText(Main.db.readStringParam("queueCloseMins"));
+		this.stdSongCooldownEntry.setText(Main.db.readStringParam("stdSongCooldown"));
+		this.stdUserCooldownEntry.setText(Main.db.readStringParam("stdUserCooldown"));
+		this.globalCostSclEntry.setText(Main.db.readStringParam("globalCostScl"));
+		this.baseSongPriceMinEntry.setText(Main.db.readStringParam("baseSongPriceMin"));
+		this.baseHistoryExpireMinsEntry.setText(Main.db.readStringParam("baseHistoryExpireMins"));
+		this.baseImmediateReplaySclEntry.setText(Main.db.readStringParam("baseImmediateReplayScl"));
+		
+		System.out.println("Finished Loading configuration parameters");
+	}
+	
+	
+	
+	
+	private void writeConfigParams()
+	{
+		System.out.println("Writing configuration parameters...");
+		
+		Main.db.setParameter("percentRandom", this.percentRandomSlider.getValue());
+		Main.db.setParameter("queueOpenMins", this.queueOpenMinsEntry.getText());
+		Main.db.setParameter("queueCloseMins", this.queueCloseMinsEntry.getText());
+		Main.db.setParameter("stdSongCooldown", this.stdSongCooldownEntry.getText());
+		Main.db.setParameter("stdUserCooldown", this.stdUserCooldownEntry.getText());
+		Main.db.setParameter("globalCostScl", this.globalCostSclEntry.getText());
+		Main.db.setParameter("baseSongPriceMin", this.baseSongPriceMinEntry.getText());
+		Main.db.setParameter("baseHistoryExpireMins", this.baseHistoryExpireMinsEntry.getText());
+		Main.db.setParameter("baseImmediateReplayScl", this.baseImmediateReplaySclEntry.getText());
+	}
+	
+	
+	
+	
+	
+	
 
 	private void asserts()
 	{

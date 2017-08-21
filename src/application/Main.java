@@ -7,7 +7,12 @@ import javafx.scene.layout.AnchorPane;
 import javafx.fxml.FXMLLoader;
 
 
-public class Main extends Application {
+public class Main extends Application 
+{
+	public static DatabaseIO db = new DatabaseIO("/C:/xampp/htdocs/db/fussbot.sqlite");
+	private static final String version ="v 1.0";
+	
+	
 	@Override
 	public void start(Stage primaryStage) {
 		try {
@@ -16,15 +21,14 @@ public class Main extends Application {
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
+			primaryStage.setTitle("Nintendo Music Stream Request Controller - " +version);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public static void main(String[] args) {
-		
-		DatabaseIO db = new DatabaseIO("/C:/xampp/htdocs/db/fussbot.sqlite");
-		System.out.println(db.resultsToString(db.execRawQuery("select * from viewers")));
+	public static void main(String[] args) 
+	{
 		launch(args);
 	}
 	

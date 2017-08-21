@@ -479,6 +479,14 @@
                                           <Insets />
                                        </opaqueInsets>
                                     </Button>
+                                    <Button fx:id="clearSysoConsoleBtn" mnemonicParsing="false" onAction="#clearSysoLogConsoleBtnOnAction" prefHeight="30.0" prefWidth="88.0" text="Clear Console">
+                                       <padding>
+                                          <Insets bottom="5.0" top="5.0" />
+                                       </padding>
+                                       <HBox.margin>
+                                          <Insets left="10.0" />
+                                       </HBox.margin>
+                                    </Button>
                                  </children>
                               </HBox>
                            </children>
@@ -499,6 +507,11 @@
                                        <padding>
                                           <Insets bottom="5.0" top="5.0" />
                                        </padding>
+                                    </Button>
+                                    <Button fx:id="clearSyserrConsoleBtn" mnemonicParsing="false" onAction="#clearSyserrConsoleBtnOnAction" prefHeight="30.0" text="Clear Console">
+                                       <HBox.margin>
+                                          <Insets left="10.0" />
+                                       </HBox.margin>
                                     </Button>
                                  </children>
                               </HBox>
