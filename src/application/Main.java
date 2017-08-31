@@ -1,5 +1,8 @@
 package application;
 	
+import java.io.File;
+
+import db.DatabaseIO;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
@@ -7,9 +10,20 @@ import javafx.scene.layout.AnchorPane;
 import javafx.fxml.FXMLLoader;
 
 
+
+
+/**
+ * This is the primary controller of the entire system.
+ * This is the device that decides when requests should open and close,
+ * decide which songs should be sent to foobarIO when, etc. 
+ * 
+ * @author Duemmer
+ *
+ */
 public class Main extends Application 
 {
-	public static DatabaseIO db = new DatabaseIO("/C:/xampp/htdocs/db/fussbot.sqlite");
+	public static final String appDir = System.getenv("APPDATA") + "/KKDystrack";
+	public static DatabaseIO db;
 	private static final String version ="v 1.0";
 	
 	
@@ -21,14 +35,20 @@ public class Main extends Application
 			scene.getStylesheets().add(getClass().getResource("application.css").toExternalForm());
 			primaryStage.setScene(scene);
 			primaryStage.show();
-			primaryStage.setTitle("Nintendo Music Stream Request Controller - " +version);
+			primaryStage.setTitle("K. K. DysTrack - " +version);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
 	
+	
+	
 	public static void main(String[] args) 
 	{
+		new File(appDir).mkdirs(); // verify the property directory exists
+		db = new DatabaseIO(appDir +"/KKDystrack.sqlite");
+		
+		// This method won't finish until the application exits
 		launch(args);
 	}
 	

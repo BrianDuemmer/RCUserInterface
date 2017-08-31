@@ -239,6 +239,9 @@
                                           <Button fx:id="saveParamsBtn" mnemonicParsing="false" onAction="#saveParamsBtnOnAction" text="Save Params" />
                                           <Button fx:id="revertParamsBtn" mnemonicParsing="false" onAction="#revertParamsBtnOnAction" text="Revert Params" />
                                           <Button fx:id="exportQueueBtn" mnemonicParsing="false" onAction="#exportQueueBtnOnAction" text="Export current queue to CSV..." />
+                                          <Button fx:id="addSongBtn" mnemonicParsing="false" onAction="#addSongManual" text="Add..." />
+                                          <Button fx:id="addRandomBtn" mnemonicParsing="false" onAction="#addSongRandom" text="Add Random" />
+                                          <Button fx:id="regenPlaylistBtn" mnemonicParsing="false" onAction="#regenPlaylistOnAction" text="Regenerate Playlist..." />
                                        </items>
                                     </ToolBar>
                                  </top>
@@ -330,11 +333,13 @@
                                                 <TableView fx:id="currentQueue" prefHeight="568.0" prefWidth="618.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                   <columns>
                                                     <TableColumn fx:id="currentQueueNameCol" prefWidth="111.0" text="Name" />
-                                                    <TableColumn fx:id="currentQueueOSTCol" minWidth="0.0" prefWidth="123.0" text="OST" />
-                                                      <TableColumn fx:id="currentQueueUsernameCol" prefWidth="153.0" text="Username" />
-                                                      <TableColumn fx:id="currentQueueUserIDCol" prefWidth="104.0" text="User ID" />
-                                                      <TableColumn fx:id="currentQueuePriorityCol" minWidth="2.0" prefWidth="94.0" text="Priority" />
-                                                      <TableColumn fx:id="currentQueueTimeRequestedCol" prefWidth="98.0" text="Time Requested" />
+                                                    <TableColumn fx:id="currentQueueOSTCol" minWidth="0.0" prefWidth="81.0" text="OST" />
+                                                      <TableColumn fx:id="currentQueueUsernameCol" prefWidth="130.0" text="Username" />
+                                                      <TableColumn fx:id="currentQueueUserIDCol" prefWidth="102.0" text="User ID" />
+                                                      <TableColumn fx:id="currentQueuePriorityCol" minWidth="2.0" prefWidth="85.0" text="Priority" />
+                                                      <TableColumn fx:id="currentQueueTimeRequestedCol" prefWidth="91.0" text="Time Requested" />
+                                                      <TableColumn fx:id="currentQueueLengthCol" prefWidth="86.0" text="Length" />
+                                                      <TableColumn fx:id="currentQueueRatingCol" prefWidth="114.0" text="Rating" />
                                                   </columns>
                                                    <contextMenu>
                                                       <ContextMenu>
@@ -444,18 +449,7 @@
             </TabPane>
          </center>
          <top>
-            <MenuBar BorderPane.alignment="CENTER">
-              <menus>
-                <Menu mnemonicParsing="false" text="Update Rate">
-                     <items>
-                        <RadioMenuItem mnemonicParsing="false" text="0.5 s" />
-                        <RadioMenuItem mnemonicParsing="false" text="1 s" />
-                        <RadioMenuItem mnemonicParsing="false" text="2 s" />
-                        <RadioMenuItem mnemonicParsing="false" text="5 s" />
-                     </items>
-                </Menu>
-              </menus>
-            </MenuBar>
+            <MenuBar prefHeight="25.0" BorderPane.alignment="CENTER" />
          </top>
          <bottom>
             <BorderPane prefHeight="185.0" prefWidth="1236.0" BorderPane.alignment="CENTER">

@@ -3,7 +3,9 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.fx.ide.jdt.core.JAVAFX_CONTAINER"/>
-	<classpathentry kind="lib" path="lib/nanohttpd.jar"/>
-	<classpathentry kind="lib" path="lib/sqlite-jdbc-3.20.0.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/nanohttpd"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/jid3lib"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/mp3spi"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/sqlite-jdbc"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

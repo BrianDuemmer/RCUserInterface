@@ -21,7 +21,7 @@ public class SmartPrintStream extends PrintStream
 	@Override
 	public void print(String s)
 	{
-		SimpleDateFormat sd = new SimpleDateFormat("MM/dd/YY - hh:mm:ss a");
+		SimpleDateFormat sd = new SimpleDateFormat("MM/dd/YY - hh:mm:ss:SSS a");
 		String head = "[" +sd.format(new Date())+"]	";
 		super.print(head + s);
 	}
