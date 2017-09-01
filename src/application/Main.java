@@ -1,6 +1,8 @@
 package application;
 	
 import java.io.File;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import db.DatabaseIO;
 import javafx.application.Application;
@@ -26,9 +28,10 @@ public class Main extends Application
 	public static DatabaseIO db;
 	private static final String version ="v 1.0";
 	
+	// Periodic update thread pools
+	public static ScheduledExecutorService UIUpdateService = Executors.newSingleThreadScheduledExecutor();
 	
-	@Override
-	public void start(Stage primaryStage) {
+	@Override public void start(Stage primaryStage) {
 		try {
 			AnchorPane root = (AnchorPane)FXMLLoader.load(getClass().getResource("MainWindow.fxml"));
 			Scene scene = new Scene(root,1600,800);
@@ -39,6 +42,15 @@ public class Main extends Application
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	
+	
+	@Override public void stop()
+	{
+		// Stop all update threads, provided they aren't null
+		if(UIUpdateService != null)
+			UIUpdateService.shutdown();
 	}
 	
 	

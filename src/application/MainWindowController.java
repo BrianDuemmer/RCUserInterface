@@ -7,11 +7,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import db.RCTables;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 
@@ -46,6 +49,7 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import rc.QueueEntry;
 import util.TextAreaOutputStream;
+import util.ReqMode;
 import util.SmartPrintStream;
 
 public class MainWindowController 
@@ -241,7 +245,7 @@ public class MainWindowController
 
 	@FXML // fx:id="addRandomBtn"
 	private Button addRandomBtn; // Value injected by FXMLLoader
-	
+
 	@FXML // fx:id="regenPlaylistBtn"
 	private Button regenPlaylistBtn; // Value injected by FXMLLoader
 
@@ -342,7 +346,7 @@ public class MainWindowController
 	@FXML
 	void clearSyserrConsoleBtnOnAction(ActionEvent event) { syserrLogTxtbox.clear(); }
 
-	
+
 	// All of the text entry parameters get verified, and written from here
 	@FXML void queueOpenMinsOnAction(ActionEvent event) { writeDoubleTextFieldToDB("queueOpenMins", queueOpenMinsEntry); }
 	@FXML void queueCloseMinsOnAction(ActionEvent event) { writeDoubleTextFieldToDB("queueCloseMins", queueCloseMinsEntry); }
@@ -353,16 +357,27 @@ public class MainWindowController
 	@FXML void baseHistoryExpireMinsOnAction(ActionEvent event) { writeDoubleTextFieldToDB("baseHistoryExpireMins", baseHistoryExpireMinsEntry); }
 	@FXML void baseImmediateReplaySclOnAction(ActionEvent event) { writeDoubleTextFieldToDB("baseImmediateReplayScl", baseImmediateReplaySclEntry); }
 
+
+	/**
+	 * Gray / ungray the manual mode button depending on whether or not the
+	 * "Auto" checkbox is selected
+	 * @param event unused, can be null
+	 */
 	@FXML
-	void requestsAutoBoxOnAction(ActionEvent event) 
-	{
-		
+	void requestsAutoBoxOnAction(ActionEvent event) {
+		boolean isPressed = requestsAutoBox.isSelected();
+		requestManualBtn.setDisable(isPressed);
+
+		// push changes to the database
+		Main.db.writeRequestModeToDB(getCurrReqMode());
 	}
 
-	@FXML
-	void requestManualBtnOnAction(ActionEvent event) {
 
-	}
+	/**
+	 * Just push changes to the database
+	 */
+	@FXML
+	void requestManualBtnOnAction(ActionEvent event) { Main.db.writeRequestModeToDB(getCurrReqMode()); }
 
 	@FXML
 	void freeRequestsBoxOnAction(ActionEvent event) {
@@ -401,7 +416,7 @@ public class MainWindowController
 	@FXML
 	void addSongRandom(ActionEvent event)
 	{
-		
+
 	}
 
 	@FXML
@@ -416,7 +431,7 @@ public class MainWindowController
 			stage.setResizable(false);
 			stage.showAndWait(); // Wait for that system to finish, then update the queue table
 			readQueueToTable();
-			
+
 		} catch(Exception e)
 		{
 			e.printStackTrace();
@@ -425,8 +440,8 @@ public class MainWindowController
 			a.showAndWait();
 		}
 	}
-	
-	
+
+
 	@FXML // opens up the playlist regenerator window and runs the playlist generator algorithm
 	void regenPlaylistOnAction(ActionEvent event)
 	{
@@ -445,40 +460,7 @@ public class MainWindowController
 			a.showAndWait();
 		}
 	}
-	
-	
-	
-	/**
-	 * Verifies a textField for data valididty (As a double), alerts the user if something's wrong, or
-	 * writes to the database if it's good 
-	 * @param name the settings key name to write to
-	 * @param field
-	 */
-	private void writeDoubleTextFieldToDB(String name, TextField field) {
-		try {
-			double val = Double.parseDouble(field.getText()); // Attempt to parse out the field
-			
-			Thread t = new Thread(() -> {  // If we get here the field is valid, so we can push it to the database
-				try { Main.db.setParameter(name, val); } 
-				
-				// DB error. Usually an SQLITE_BLOCKED due to the DB viewer being open with pending writes
-				catch (SQLException e) {new Alert(AlertType.ERROR, "Failed to push parameter \"" +name+ "\" to database. See error log for more details").showAndWait(); }
-			});
-			
-			t.setDaemon(true);
-			t.setName("WriteDoubleTextFieldToDB");
-			t.start();
-		} catch (Exception e) // format / display the error message, then update the field to be a safe value
-		{
-			Alert a = new Alert(AlertType.ERROR);
-			a.setContentText("The value \"" +field.getText()+ "\" is not a valid number!");
-			a.setTitle("Bad input!");
-			a.setHeaderText("Bad input!");
-			a.showAndWait();
-			
-			field.setText("0");
-		}
-	}
+
 
 
 
@@ -514,10 +496,132 @@ public class MainWindowController
 		System.setErr(newErr);
 
 		System.out.println("Initializing primary controller...");
+
+		// Add listeners to the control properties that need them
+		// manual request mode, have button text change based on whether or not it is selected
+		requestManualBtn.selectedProperty().addListener(new ChangeListener<Boolean>() {
+			@Override
+			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+				if(newValue.booleanValue()) // button pressed, set text to "Open"
+					requestManualBtn.setText("Open");
+				else // button not pressed, set text to "closed"
+					requestManualBtn.setText("Closed");
+			}
+		});
+
+		// initialize the database - Block the UI thread with this because we don't want the UI to initialize
+		// without the database ready, but we also want syso and syserr redirected to the onscreen text boxes beforehand
+		try { Main.db.verifyConnected(); }
+		catch (Exception e) {
+			Alert a = new Alert(AlertType.ERROR, "FATAL: Failed to open database connection! Check error log for more details.");
+			a.setTitle("Database error");
+			a.setHeaderText("Database Error");
+
+			e.printStackTrace(); // print to the error log before showing the error message
+
+			a.showAndWait();
+		}
+
+
+		// Initialize the parameters
+		bindParametersOffFocus();
+
+		// Load all of the parameters to the UI
 		loadConfigParams();
+
+		// Initialize the tableViews
 		initQueueTable();
-		readQueueToTable();
+
+		// Initialize the update services
+		Main.UIUpdateService.scheduleAtFixedRate(uiUpdateTask, 0, 1500, TimeUnit.MILLISECONDS); // Run immediately, 1.5 seconds between each update
 	}
+
+
+
+
+
+
+	/**
+	 * Updates the UI Request mode controls to reflect the given request mode status
+	 */
+	private void setReqModeUI(ReqMode mode)
+	{
+		if(mode == ReqMode.AUTO) { // checkbox selected, manual button grayed
+			this.requestsAutoBox.setSelected(true);
+			this.requestManualBtn.setDisable(true);
+		} else if (mode == ReqMode.CLOSED) { // checkbox unselected, manual button active, text set to "Closed", not pressed - Should be handled by property listener!
+			this.requestsAutoBox.setSelected(false);
+			this.requestManualBtn.setDisable(false);
+			this.requestManualBtn.selectedProperty().set(false);
+		} else if (mode == ReqMode.OPEN) { // checkbox unselected, manual button active, text set to "Open", pressed - Should be handled by property listener!
+			this.requestsAutoBox.setSelected(false);
+			this.requestManualBtn.setDisable(false);
+			this.requestManualBtn.selectedProperty().set(true);
+		} else { // Some error occured, dump stack trace to stderr
+			System.err.println("Invalid mode passed to setReqModeUI");
+			Thread.dumpStack();
+		}
+	}
+
+
+
+
+	/**
+	 * Reads the current request mode from the UI
+	 */
+	private ReqMode getCurrReqMode()
+	{
+		ReqMode ret;
+
+		if(requestsAutoBox.isSelected()) // auto box checked
+			ret = ReqMode.AUTO;
+
+		else if (requestManualBtn.isSelected()) // auto box not checked, and manual button pressed
+			ret = ReqMode.OPEN;
+
+		else // auto box not checked, manual button not pressed
+			ret = ReqMode.CLOSED;
+
+		return ret;
+	}
+
+
+
+
+
+	/**
+	 * Verifies a textField for data valididty (As a double), alerts the user if something's wrong, or
+	 * writes to the database if it's good 
+	 * @param name the settings key name to write to
+	 * @param field
+	 */
+	private void writeDoubleTextFieldToDB(String name, TextField field) {
+		try {
+			double val = Double.parseDouble(field.getText()); // Attempt to parse out the field
+
+			Thread t = new Thread(() -> {  // If we get here the field is valid, so we can push it to the database
+				try { Main.db.setParameter(name, val); } 
+
+				// DB error. Usually an SQLITE_BLOCKED due to the DB viewer being open with pending writes
+				catch (SQLException e) {new Alert(AlertType.ERROR, "Failed to push parameter \"" +name+ "\" to database. See error log for more details").showAndWait(); }
+			});
+
+			t.setDaemon(true);
+			t.setName("WriteDoubleTextFieldToDB");
+			t.start();
+		} catch (Exception e) // format / display the error message, then update the field to be a safe value
+		{
+			Alert a = new Alert(AlertType.ERROR);
+			a.setContentText("The value \"" +field.getText()+ "\" is not a valid number!");
+			a.setTitle("Bad input!");
+			a.setHeaderText("Bad input!");
+			a.showAndWait();
+
+			field.setText("0");
+		}
+	}
+
+
 
 
 
@@ -629,39 +733,66 @@ public class MainWindowController
 			@Override
 			protected Void call() throws Exception
 			{
-				// control values - fetch here to use in the background thread that updates the database
-				double prs = Main.db.readRealParam("percentRandom");
-				String qome = Main.db.readStringParam("queueOpenMins");
-				String qcme = Main.db.readStringParam("queueCloseMins");
-				String ssce = Main.db.readStringParam("stdSongCooldown");
-				String gcse = Main.db.readStringParam("stdUserCooldown");
-				String suce = Main.db.readStringParam("globalCostScl");
-				String bspme = Main.db.readStringParam("baseSongPriceMin");
-				String bheme = Main.db.readStringParam("baseHistoryExpireMins");
-				String birse = Main.db.readStringParam("baseImmediateReplayScl");
-
-				Platform.runLater(() -> // only update the GUI in app thread
+				try 
 				{
-					try {
-						percentRandomSlider.setValue(prs);
-						queueOpenMinsEntry.setText(qome);
-						queueCloseMinsEntry.setText(qcme);
-						stdSongCooldownEntry.setText(ssce);
-						stdUserCooldownEntry.setText(gcse);
-						globalCostSclEntry.setText(suce);
-						baseSongPriceMinEntry.setText(bspme);
-						baseHistoryExpireMinsEntry.setText(bheme);
-						baseImmediateReplaySclEntry.setText(birse);
+					// parameter values - fetch here to use in the background thread that updates the UI
+					double prs = Main.db.readRealParam("percentRandom");
+					String qome = Main.db.readStringParam("queueOpenMins");
+					String qcme = Main.db.readStringParam("queueCloseMins");
+					String ssce = Main.db.readStringParam("stdSongCooldown");
+					String gcse = Main.db.readStringParam("stdUserCooldown");
+					String suce = Main.db.readStringParam("globalCostScl");
+					String bspme = Main.db.readStringParam("baseSongPriceMin");
+					String bheme = Main.db.readStringParam("baseHistoryExpireMins");
+					String birse = Main.db.readStringParam("baseImmediateReplayScl");
 
-						System.out.println("Finished Loading configuration parameters");
-					} catch(Exception e) 
+					// Control fields info
+					ReqMode requestMode = ReqMode.valueOf(Main.db.readStringParam("requestMode"));
+					boolean freeReqests = Main.db.readBoolParam("freeRequests");
+					boolean ignoreHistory = Main.db.readBoolParam("ignoreHistory");
+					boolean dontRecordHistory = Main.db.readBoolParam("dontRecordHistory");
+
+
+					Platform.runLater(() -> // only update the GUI in app thread
 					{
-						System.err.println("Error occured trying to read config parametes"); e.printStackTrace(); 
-						Alert a = new Alert(AlertType.ERROR, "Failed to read paramaters from database!");
-						a.show();
+						try {
+							// parameter values
+							percentRandomSlider.setValue(prs);
+							queueOpenMinsEntry.setText(qome);
+							queueCloseMinsEntry.setText(qcme);
+							stdSongCooldownEntry.setText(ssce);
+							stdUserCooldownEntry.setText(gcse);
+							globalCostSclEntry.setText(suce);
+							baseSongPriceMinEntry.setText(bspme);
+							baseHistoryExpireMinsEntry.setText(bheme);
+							baseImmediateReplaySclEntry.setText(birse);
 
-					}
-				});
+							// Control field values
+							setReqModeUI(requestMode);
+							freeRequestsBox.setSelected(freeReqests);
+							ignoreHistoryBox.setSelected(ignoreHistory);
+							dontRecordHistoryBox.setSelected(dontRecordHistory);
+
+							System.out.println("Finished Loading configuration parameters");
+						} catch(Exception e) 
+						{
+							System.err.println("Error occured trying to read config parametes"); e.printStackTrace(); 
+							Alert a = new Alert(AlertType.ERROR, "Failed to read paramaters from database!");
+							a.show();
+
+						}
+					});
+
+				} catch(Exception e) // Exception occured loading parameters
+				{
+					e.printStackTrace();
+					Platform.runLater(() -> {
+						Alert a = new Alert(AlertType.ERROR, "Exception occured in loadConfigParams(). This is a serious issue that prevents proper reading from the database.");
+						a.setTitle("Fatal error loading parameters");
+						a.setHeaderText("FATAL:");
+						a.show();	
+					});
+				}
 
 				return null;
 			}
@@ -670,8 +801,6 @@ public class MainWindowController
 		Thread t = new Thread(tsk);
 		t.setDaemon(true);
 		t.start();
-
-
 	}
 
 
@@ -733,34 +862,23 @@ public class MainWindowController
 
 
 	/**
-	 * Reads the forward queue from the database, and updates the queue table on the GUI
+	 * Reads the forward queue from the database, and updates the queue table on the GUI.<p/>
+	 * <b>NOTE</b>: This method does not implicitly create a background thread to run the 
+	 * database queries (but will run UI updates in the UI thread), so it should be called
+	 * explicitly from a background thread
 	 */
-	public void readQueueToTable()
+	private void readQueueToTable()
 	{
-		Task<ObservableList<QueueEntry>> tsk = new Task<ObservableList<QueueEntry>>() {
-			@Override // get the data from the forward queue
-			protected ObservableList<QueueEntry> call() throws Exception 
-			{
-				RCTables.forwardQueueTable.verifyExists(Main.db.getDb());
-				return QueueEntry.getForwardQueue(); 
-			}
+		queueEntries = QueueEntry.getForwardQueue(); 
 
-			@Override // set the table elements fresh
-			protected void succeeded() {
-				Platform.runLater(() ->  {
-					// update variable / table at same time
-					queueEntries = getValue();
-					currentQueue.getItems().clear();
-					currentQueue.getItems().addAll(getValue());
-				});
-			}
-		};
-
-		Thread t = new Thread(tsk);
-		t.setDaemon(true);
-		t.setName("ReadQueueToTable");
-		t.start();
+		Platform.runLater(() ->  {
+			currentQueue.getItems().clear();
+			currentQueue.getItems().addAll(queueEntries);
+		});
 	}
+
+
+
 
 
 
@@ -768,7 +886,7 @@ public class MainWindowController
 	 * Writes the queueEntries list to the database. <br>
 	 * <b>CAUTION:</b> This will override everything in the queue!
 	 */
-	public void writeQueueToDB()
+	private void writeQueueToDB()
 	{
 		Task<Void> tsk = new Task<Void>() {
 			@Override
@@ -798,24 +916,85 @@ public class MainWindowController
 		t.setName("writeQueueToDB");
 		t.start();
 	}
-	
-	
-	
-	
-	
-	
-//	/**
-//	 * UPSATE THREAD - This code will be called periodically to keep the main UI synced with the database.
-//	 * This includes reading / writing variable data, keeping the onscreen tables updated, and possibly 
-//	 * other things as they arise in the future
-//	 */	
-//	private void initGuiUpdateService()
-//	{
-//		ScheduledExecutorService sexs = Executors.newScheduledThreadPool(1);
-//		sexs.scheduleAtFixedRate(command, initialDelay, period, unit)
-//	}
 
-	
+
+
+
+
+	/**
+	 * Binds the update methods on all of the parameter textfield inputs to the isFocused
+	 * property, to act whenever focus is lost. <p/>
+	 * 
+	 * for each one, if the old value of isFocused() is true, the new value is false, meaning we lost focus
+	 * If we lost focus, it's a safe bet the user is done editing the control, so it's safe to process / validate it
+	 */
+	private void bindParametersOffFocus()
+	{
+		queueOpenMinsEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				queueOpenMinsOnAction(null); 
+		});
+
+		queueCloseMinsEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				queueCloseMinsOnAction(null); 
+		});
+
+		stdSongCooldownEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				stdSongCooldownOnAction(null); 
+		});
+
+		stdUserCooldownEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				stdUserCooldownOnAction(null); 
+		});
+
+		stdUserCooldownEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				stdUserCooldownOnAction(null); 
+		});
+
+		globalCostSclEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				globalCostSclOnAction(null); 
+		});
+
+		baseSongPriceMinEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				baseSongPriceMinOnAction(null); 
+		});
+
+		baseHistoryExpireMinsEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				baseHistoryExpireMinsOnAction(null); 
+		});
+
+		baseImmediateReplaySclEntry.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+				baseImmediateReplaySclOnAction(null); 
+		});
+	}
+
+
+
+
+	/**
+	 * This code will run periodically to keep the UI in sync with the database. We use this polling approach
+	 * instead of an event driven approach because it is anticipated that outside / untracked changes to the 
+	 * database can be made without warning, and we would like to register these <p/>
+	 * 
+	 * As of now, this only updates the queue table
+	 */
+	private Runnable uiUpdateTask = new Runnable() {
+		@Override public void run() 
+		{
+			if(!currentQueue.isFocused()) // only run if we aren't focused
+				readQueueToTable();
+		}
+	};
+
+
 
 
 }

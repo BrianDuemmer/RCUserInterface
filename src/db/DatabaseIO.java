@@ -10,6 +10,12 @@ import java.sql.Statement;
 
 import org.sqlite.SQLiteErrorCode;
 
+import application.Main;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import util.ReqMode;
+
 /**
  * This class performs all of the database IO. Any SQL to execute is 
  * sent here, and results returned
@@ -44,9 +50,9 @@ public class DatabaseIO
 
 	/**
 	 * Checks to make sure we are validly connected to the 
-	 * database
+	 * database. If it isn't open already, this will do it
 	 */
-	private void verifyConnected() throws SQLException
+	public void verifyConnected() throws SQLException
 	{
 		if(db == null || !db.isValid(3)) // If we are null or the connection is invalid, reestablish the connection
 		{
@@ -365,6 +371,29 @@ public class DatabaseIO
 		// If it didn't hit the above return statement, then the key wasn't newly created
 		return false;
 	}
+	
+	
+	
+	
+	
+	/**
+	 * Writes the ReqMode to the database. This will run in a background thread.
+	 */
+	public void writeRequestModeToDB(ReqMode mode) {
+		Thread t = new Thread(() -> {
+			try { Main.db.setParameter("requestMode", mode.toString()); } 
+			catch (Exception e) 
+			{
+				Platform.runLater(() -> { new Alert(AlertType.ERROR, "Failed to write parameter \"requestMode\" to database!").show(); });
+				e.printStackTrace();
+			}
+		});
+		t.setDaemon(true);
+		t.setName("writeRequestMode");
+		t.start();
+	}
+	
+	
 
 
 

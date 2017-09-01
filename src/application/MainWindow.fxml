@@ -193,12 +193,12 @@
                                                                <children>
                                                                   <HBox prefHeight="18.0" prefWidth="156.0">
                                                                      <children>
-                                                                        <CheckBox fx:id="requestsAutoBox" mnemonicParsing="false" onAction="#requestsAutoBoxOnAction" text="Auto">
+                                                                        <CheckBox fx:id="requestsAutoBox" mnemonicParsing="false" onAction="#requestsAutoBoxOnAction" selected="true" text="Auto">
                                                                            <HBox.margin>
                                                                               <Insets left="5.0" top="6.0" />
                                                                            </HBox.margin>
                                                                         </CheckBox>
-                                                                        <ToggleButton fx:id="requestManualBtn" disable="true" mnemonicParsing="false" onAction="#requestManualBtnOnAction" text="Off">
+                                                                        <ToggleButton fx:id="requestManualBtn" disable="true" mnemonicParsing="false" onAction="#requestManualBtnOnAction" text="Closed">
                                                                            <HBox.margin>
                                                                               <Insets left="8.0" top="2.0" />
                                                                            </HBox.margin>

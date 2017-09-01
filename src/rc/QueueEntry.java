@@ -50,6 +50,7 @@ public class QueueEntry
 		try 
 		{
 			// just dump the whole table
+			RCTables.forwardQueueTable.verifyExists(Main.db.getDb());
 			ResultSet rs = Main.db.execRaw("SELECT * FROM " +RCTables.forwardQueueTable.getName()+ ";");
 
 			while(rs.next()) // read each table entry seperately and dump it into the QueueEntry

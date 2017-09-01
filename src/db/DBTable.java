@@ -40,7 +40,7 @@ public class DBTable
 		
 		try 
 		{
-			if(!db.isValid(3)) // break if invalid
+			if(db == null || !db.isValid(3)) // break if invalid or null
 			{
 				System.err.println("Invalid database at verifyTable");
 				return;
