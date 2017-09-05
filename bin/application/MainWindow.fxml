@@ -242,6 +242,9 @@
                                           <Button fx:id="addSongBtn" mnemonicParsing="false" onAction="#addSongManual" text="Add..." />
                                           <Button fx:id="addRandomBtn" mnemonicParsing="false" onAction="#addSongRandom" text="Add Random" />
                                           <Button fx:id="regenPlaylistBtn" mnemonicParsing="false" onAction="#regenPlaylistOnAction" text="Regenerate Playlist..." />
+                                          <Button fx:id="resetFoobarBtn" mnemonicParsing="false" onAction="#resetFoobarOnAction" text="Start / Reset Foobar" />
+                                          <ToggleButton fx:id="foobarPlayStatusBtn" mnemonicParsing="false" onAction="#foobarPlayStatusBtnOnAction" text="Play Foobar" />
+                                          <Button fx:id="skipSongBtn" mnemonicParsing="false" onAction="#skipSongBtnOnAction" text="Skip Song" />
                                        </items>
                                     </ToolBar>
                                  </top>
@@ -281,6 +284,11 @@
                                                                         <Insets bottom="5.0" left="5.0" top="5.0" />
                                                                      </VBox.margin>
                                                                   </Label>
+                                                                  <Label layoutX="15.0" layoutY="96.0" maxWidth="1.7976931348623157E308" text="Foobar Open?">
+                                                                     <VBox.margin>
+                                                                        <Insets bottom="5.0" left="5.0" top="5.0" />
+                                                                     </VBox.margin>
+                                                                  </Label>
                                                                </children>
                                                             </VBox>
                                                          </children>
@@ -306,7 +314,12 @@
                                                                   </Label>
                                                                   <CheckBox fx:id="queueOpenBox" disable="true" mnemonicParsing="false">
                                                                      <VBox.margin>
-                                                                        <Insets bottom="4.0" left="5.0" top="4.0" />
+                                                                        <Insets bottom="6.0" left="5.0" top="4.0" />
+                                                                     </VBox.margin>
+                                                                  </CheckBox>
+                                                                  <CheckBox fx:id="foobarOpenBox" disable="true" layoutX="15.0" layoutY="94.0" mnemonicParsing="false">
+                                                                     <VBox.margin>
+                                                                        <Insets bottom="5.0" left="5.0" top="5.0" />
                                                                      </VBox.margin>
                                                                   </CheckBox>
                                                                </children>
@@ -330,22 +343,21 @@
                                           </AnchorPane>
                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                                              <children>
-                                                <TableView fx:id="currentQueue" prefHeight="568.0" prefWidth="618.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                <TableView fx:id="currentQueue" editable="true" prefHeight="568.0" prefWidth="618.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                   <columns>
-                                                    <TableColumn fx:id="currentQueueNameCol" prefWidth="111.0" text="Name" />
-                                                    <TableColumn fx:id="currentQueueOSTCol" minWidth="0.0" prefWidth="81.0" text="OST" />
-                                                      <TableColumn fx:id="currentQueueUsernameCol" prefWidth="130.0" text="Username" />
-                                                      <TableColumn fx:id="currentQueueUserIDCol" prefWidth="102.0" text="User ID" />
-                                                      <TableColumn fx:id="currentQueuePriorityCol" minWidth="2.0" prefWidth="85.0" text="Priority" />
-                                                      <TableColumn fx:id="currentQueueTimeRequestedCol" prefWidth="91.0" text="Time Requested" />
-                                                      <TableColumn fx:id="currentQueueLengthCol" prefWidth="86.0" text="Length" />
-                                                      <TableColumn fx:id="currentQueueRatingCol" prefWidth="114.0" text="Rating" />
+                                                    <TableColumn fx:id="currentQueueNameCol" editable="false" prefWidth="111.0" sortable="false" text="Name" />
+                                                    <TableColumn fx:id="currentQueueOSTCol" editable="false" minWidth="0.0" prefWidth="81.0" sortable="false" text="OST" />
+                                                      <TableColumn fx:id="currentQueueUsernameCol" editable="false" prefWidth="130.0" sortable="false" text="Username" />
+                                                      <TableColumn fx:id="currentQueueUserIDCol" editable="false" prefWidth="102.0" sortable="false" text="User ID" />
+                                                      <TableColumn fx:id="currentQueuePriorityCol" editable="false" minWidth="2.0" prefWidth="85.0" sortable="false" text="Priority" />
+                                                      <TableColumn fx:id="currentQueueTimeRequestedCol" editable="false" prefWidth="91.0" sortable="false" text="Time Requested" />
+                                                      <TableColumn fx:id="currentQueueLengthCol" editable="false" prefWidth="86.0" sortable="false" text="Length" />
+                                                      <TableColumn fx:id="currentQueueRatingCol" editable="false" prefWidth="114.0" sortable="false" text="Rating" />
                                                   </columns>
                                                    <contextMenu>
                                                       <ContextMenu>
                                                         <items>
-                                                            <MenuItem mnemonicParsing="false" text="Remove Song" />
-                                                            <MenuItem mnemonicParsing="false" text="Edit Song" />
+                                                            <MenuItem fx:id="queueTableMenuRemoveSong" mnemonicParsing="false" onAction="#queueTableMenuRemoveSongOnAction" text="Remove Song" />
                                                         </items>
                                                       </ContextMenu>
                                                    </contextMenu>
@@ -448,9 +460,6 @@
               </tabs>
             </TabPane>
          </center>
-         <top>
-            <MenuBar prefHeight="25.0" BorderPane.alignment="CENTER" />
-         </top>
          <bottom>
             <BorderPane prefHeight="185.0" prefWidth="1236.0" BorderPane.alignment="CENTER">
                <top>
@@ -532,6 +541,13 @@
                </center>
             </BorderPane>
          </bottom>
+         <top>
+            <Label fx:id="nowPlayingLabel" alignment="CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Now Playing" textAlignment="CENTER" BorderPane.alignment="CENTER">
+               <font>
+                  <Font name="System Bold" size="14.0" />
+               </font>
+            </Label>
+         </top>
       </BorderPane>
    </children>
 </AnchorPane>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp spec="1.0" xmlns:jfx="http://javafx.com" href="KKDysTrack.jnlp">
+  <information>
+    <title>KKDysTrack</title>
+    <vendor>theDuemmer.dev</vendor>
+    <description>KKDystrack</description>
+    <offline-allowed/>
+  </information>
+  <resources>
+    <j2se version="1.6+" href="http://java.sun.com/products/autodl/j2se"/>
+    <jar href="KKDysTrack.jar" size="80899" download="eager" />
+    <jar href="libs\KKDysTrack.jar" size="78911" download="eager" />
+    <jar href="libs\jid3lib-0.5.4.jar" size="192186" download="eager" />
+    <jar href="libs\jl1.0.1.jar" size="105363" download="eager" />
+    <jar href="libs\mp3spi1.9.5.jar" size="24696" download="eager" />
+    <jar href="libs\nanohttpd-webserver-2.1.1.jar" size="49405" download="eager" />
+    <jar href="libs\sqlite-jdbc-3.20.0.jar" size="6637012" download="eager" />
+    <jar href="libs\tritonus_share-0.3.6.jar" size="105684" download="eager" />
+  </resources>
+  <jfx:javafx-desc  width="0" height="0" main-class="application.Dystrack"  name="KKDystrack" />
+  <update check="background"/>
+</jnlp>

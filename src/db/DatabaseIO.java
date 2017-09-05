@@ -1,5 +1,11 @@
 package db;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.file.Files;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -7,10 +13,10 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 import org.sqlite.SQLiteErrorCode;
 
-import application.Main;
 import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -83,48 +89,51 @@ public class DatabaseIO
 	 * @param sql the sql statement to execute
 	 * @return the @link ResultSet of the query, or null if the reference to the database is invalid
 	 */
-	public synchronized ResultSet execRaw(String sql) throws SQLException
+	public ResultSet execRaw(String sql) throws SQLException
 	{
-		ResultSet res = null;
-		Statement st;
-		boolean isBusy = false;
-		int busyRetries = 0;
-
-		// Attempt to connect. Print an error and return an empty set on failure
-		try { verifyConnected(); } 
-		catch (SQLException e) 
+		synchronized(this)
 		{
-			e.printStackTrace();
+			ResultSet res = null;
+			Statement st;
+			boolean isBusy = false;
+			int busyRetries = 0;
+
+			// Attempt to connect. Print an error and return an empty set on failure
+			try { verifyConnected(); } 
+			catch (SQLException e) 
+			{
+				e.printStackTrace();
+				return res;
+			}
+
+			// Prepare and execute the query, and continue and retry if necessary
+			do {
+				try  {
+					st = db.createStatement();
+					if (st.execute(sql)) // execute the query, and if it gave us a result set, grab it
+						res = st.getResultSet();
+
+					break; // If we get this far the statement executed correctly, so we can just break out of the loop
+				} catch (SQLException e) 
+				{
+					isBusy = e.getErrorCode() == SQLiteErrorCode.SQLITE_BUSY.code;
+					if(isBusy && busyRetries <= busyRetriesMax) // If it's busy, and hasn't retried too much, make a special note, wait a little bit for everything to clear, and try again
+					{
+						busyRetries++;
+						System.err.println("WARNING: read query \"" +sql+ "\" encountered SQLITE_BUSY. Retryig in 250ms...");
+						try { Thread.sleep(250); } catch (InterruptedException e1) { e1.printStackTrace(); }
+					} else if (isBusy && busyRetries > busyRetriesMax) // we retried too many times. This is likely an indicator of a larger issue if this runs...
+					{
+						System.err.println("FATAL: read query \"" +sql+ "\" encountered SQLITE_BUSY too many times. Cancelling...");
+						throw e; //propagate up the error in the event it gives a little more info
+					}
+
+					else // something other than a busy happened - let the caller handle it
+						throw e;
+				}
+			} while(isBusy);
 			return res;
 		}
-
-		// Prepare and execute the query, and continue and retry if necessary
-		do {
-			try  {
-				st = db.createStatement();
-				if (st.execute(sql)) // execute the query, and if it gave us a result set, grab it
-					res = st.getResultSet();
-
-				break; // If we get this far the statement executed correctly, so we can just break out of the loop
-			} catch (SQLException e) 
-			{
-				isBusy = e.getErrorCode() == SQLiteErrorCode.SQLITE_BUSY.code;
-				if(isBusy && busyRetries <= busyRetriesMax) // If it's busy, and hasn't retried too much, make a special note, wait a little bit for everything to clear, and try again
-				{
-					busyRetries++;
-					System.err.println("WARNING: read query \"" +sql+ "\" encountered SQLITE_BUSY. Retryig in 250ms...");
-					try { Thread.sleep(250); } catch (InterruptedException e1) { e1.printStackTrace(); }
-				} else if (isBusy && busyRetries > busyRetriesMax) // we retried too many times. This is likely an indicator of a larger issue if this runs...
-				{
-					System.err.println("FATAL: read query \"" +sql+ "\" encountered SQLITE_BUSY too many times. Cancelling...");
-					throw e; //propagate up the error in the event it gives a little more info
-				}
-
-				else // something other than a busy happened - let the caller handle it
-					throw e;
-			}
-		} while(isBusy);
-		return res;
 	}
 
 
@@ -141,46 +150,49 @@ public class DatabaseIO
 	 * @param sql the preparedStatement to execute
 	 * @return the @link ResultSet of the query, or null if the reference to the database is invalid
 	 */
-	public synchronized ResultSet execRaw(PreparedStatement ps) throws SQLException
+	public ResultSet execRaw(PreparedStatement ps) throws SQLException
 	{
-		ResultSet res = null;
-		boolean isBusy = false;
-		int busyRetries = 0;
-
-		// Attempt to connect. Print an error and return an empty set on failure
-		try { verifyConnected(); } 
-		catch (SQLException e) 
+		synchronized(this)
 		{
-			e.printStackTrace();
+			ResultSet res = null;
+			boolean isBusy = false;
+			int busyRetries = 0;
+
+			// Attempt to connect. Print an error and return an empty set on failure
+			try { verifyConnected(); } 
+			catch (SQLException e) 
+			{
+				e.printStackTrace();
+				return res;
+			}
+
+			// Prepare and execute the query, and continue and retry if necessary
+			do {
+				try  {
+					if (ps.execute()) // execute the query, and if it gave us a result set, grab it
+						res = ps.getResultSet();
+
+					break; // If we get this far the statement executed correctly, so we can just break out of the loop
+				} catch (SQLException e) 
+				{
+					isBusy = e.getErrorCode() == SQLiteErrorCode.SQLITE_BUSY.code;
+					if(isBusy && busyRetries <= busyRetriesMax) // If it's busy, and hasn't retried too much, make a special note, wait a little bit for everything to clear, and try again
+					{
+						busyRetries++;
+						System.err.println("WARNING: PreparedStatement encountered SQLITE_BUSY. Retryig in 250ms...");
+						try { Thread.sleep(250); } catch (InterruptedException e1) { e1.printStackTrace(); }
+					} else if (isBusy && busyRetries > busyRetriesMax) // we retried too many times. This is likely an indicator of a larger issue if this runs...
+					{
+						System.err.println("FATAL: PreparedStatement encountered SQLITE_BUSY too many times. Cancelling...");
+						throw e; //propagate up the error in the event it gives a little more info
+					}
+
+					else // something other than a busy happened - let the caller handle it
+						throw e;
+				}
+			} while(isBusy);
 			return res;
 		}
-
-		// Prepare and execute the query, and continue and retry if necessary
-		do {
-			try  {
-				if (ps.execute()) // execute the query, and if it gave us a result set, grab it
-					res = ps.getResultSet();
-
-				break; // If we get this far the statement executed correctly, so we can just break out of the loop
-			} catch (SQLException e) 
-			{
-				isBusy = e.getErrorCode() == SQLiteErrorCode.SQLITE_BUSY.code;
-				if(isBusy && busyRetries <= busyRetriesMax) // If it's busy, and hasn't retried too much, make a special note, wait a little bit for everything to clear, and try again
-				{
-					busyRetries++;
-					System.err.println("WARNING: PreparedStatement encountered SQLITE_BUSY. Retryig in 250ms...");
-					try { Thread.sleep(250); } catch (InterruptedException e1) { e1.printStackTrace(); }
-				} else if (isBusy && busyRetries > busyRetriesMax) // we retried too many times. This is likely an indicator of a larger issue if this runs...
-				{
-					System.err.println("FATAL: PreparedStatement encountered SQLITE_BUSY too many times. Cancelling...");
-					throw e; //propagate up the error in the event it gives a little more info
-				}
-
-				else // something other than a busy happened - let the caller handle it
-					throw e;
-			}
-		} while(isBusy);
-		return res;
 	}
 
 
@@ -226,40 +238,43 @@ public class DatabaseIO
 	 * if the key wasn't found
 	 */
 	private String readParameter(String key)
-	{		
-		String val = ""; // Will return empty string on failure
-
-		// Use a prepared Statement for added security
-		String sql = "SELECT value2 FROM " +RCTables.paramTable.getName()+ " WHERE setting = ?";
-		ResultSet rs;
-		try
+	{	
+		synchronized(this)
 		{
-			// Be sure we are connected and that the table exists before proceeding
-			verifyConnected();
+			String val = ""; // Will return empty string on failure
+
+			// Use a prepared Statement for added security
 			RCTables.paramTable.verifyExists(db);
-
-			PreparedStatement ps = db.prepareStatement(sql);
-			ps.setString(1, key);
-			rs = execRaw(ps);
-
-			if(rs == null) // gets returned if the statement was an update, not a read
-				System.err.println("Null ResultSet returned by readParameter() on param " +key+ ". This is likely due to a faulty query!");
-
-			if(!rs.next()) // if empty, print a warning and return empty string
+			String sql = "SELECT value2 FROM " +RCTables.paramTable.getName()+ " WHERE setting = ?";
+			ResultSet rs;
+			try
 			{
-				System.err.println("WARNING: Could not find parameter key " +key+ ". Creating key with empty value...");
-				setParameter(key, "");
-			} 
-			// If this is hit then there is at least 1 result
-			else { val = rs.getString(1); }
+				// Be sure we are connected and that the table exists before proceeding
+				verifyConnected();
+				RCTables.paramTable.verifyExists(db);
 
-		} catch (SQLException e) 
-		{ 
-			System.err.println("ERROR attempting to read parameter key " +key);
-			e.printStackTrace(); 
+				PreparedStatement ps = db.prepareStatement(sql);
+				ps.setString(1, key);
+				rs = execRaw(ps);
+
+				if(!rs.next()) // if empty, print a warning and return empty string
+				{
+					System.err.println("WARNING: Could not find parameter key " +key+ ". Creating key with value \"0\"...");
+					setParameter(key, "0");
+					Thread.dumpStack();
+				} 
+				// If this is hit then there is at least 1 result
+				else { val = rs.getString(1); }
+
+				rs.close();
+			} catch (SQLException e) 
+			{ 
+				System.err.println("ERROR attempting to read parameter key " +key);
+				e.printStackTrace(); 
+			}
+
+			return val;
 		}
-
-		return val;
 	}
 
 
@@ -282,7 +297,15 @@ public class DatabaseIO
 	public double readRealParam(String key) 
 	{ 
 		try { return new Double(readParameter(key)); }
-		catch(Exception e) { System.err.println("Failed to parse Real for key \"" +key+ "\""); e.printStackTrace();}
+		catch(Exception e) { 
+			System.err.println("Failed to parse Real for key \"" +key+ "\"");
+			try {
+				setParameter(key, 0);
+			} catch (SQLException e1) {
+				System.err.println("Failed to write default integer parameter");
+				e1.printStackTrace();
+			}
+		}
 		return 0;
 	}
 
@@ -298,7 +321,16 @@ public class DatabaseIO
 	public int readIntegerParam(String key) 
 	{ 
 		try { return new Integer(readParameter(key)); }
-		catch(Exception e) { System.err.println("Failed to parse Integer for key \"" +key+ "\""); e.printStackTrace();}
+		catch(Exception e) 
+		{ 
+			System.err.println("Failed to parse Integer for key \"" +key+ "\""); 
+			try {
+				setParameter(key, 0);
+			} catch (SQLException e1) {
+				System.err.println("Failed to write default integer parameter");
+				e1.printStackTrace();
+			}
+		}
 		return 0;
 	}
 
@@ -334,54 +366,58 @@ public class DatabaseIO
 	 */
 	public boolean setParameter(String key, String value) throws SQLException
 	{
-		String sql1 = "DELETE FROM " +RCTables.paramTable.getName()+ " WHERE setting=?";
-		String sql2 = "INSERT OR REPLACE INTO " +RCTables.paramTable.getName()+ " VALUES( ?, ?, ?)";
-
-		try
+		synchronized(this)
 		{
-			//verifyTableExists(paramTable, paramTableCols);
-			verifyConnected();
+			RCTables.paramTable.verifyExists(db);
+			String sql1 = "DELETE FROM " +RCTables.paramTable.getName()+ " WHERE setting=?";
+			String sql2 = "INSERT OR REPLACE INTO " +RCTables.paramTable.getName()+ " VALUES( ?, ?, ?)";
 
-			PreparedStatement ps1 = db.prepareStatement(sql1);
-			ps1.setString(1, key);
-			execRaw(ps1);
-			
-			PreparedStatement ps2 = db.prepareStatement(sql2);
-			ps2.setString(1, key);
-			ps2.setLong(2, 0);
-			ps2.setString(3, value);
-			execRaw(ps2);
-
-			// if we reached this point, then the parameter was created and the values should be in the table
-			return true;
-		} 	
-		catch (SQLException e) // if this exception is thrown, that means the key already exists, so update instead
-		{ 
-			// if there's a timeout exception, let it propagate further to prevent locking up the database routines
-			if(e.getErrorCode() == SQLiteErrorCode.SQLITE_BUSY.code)
-				throw e;
-			
-			else
+			try
 			{
-				System.err.println("Exception encountered in SetParameter()!");
-				e.printStackTrace();
-			}
-		} 
+				//verifyTableExists(paramTable, paramTableCols);
+				verifyConnected();
 
-		// If it didn't hit the above return statement, then the key wasn't newly created
-		return false;
+				PreparedStatement ps1 = db.prepareStatement(sql1);
+				ps1.setString(1, key);
+				execRaw(ps1);
+
+				PreparedStatement ps2 = db.prepareStatement(sql2);
+				ps2.setString(1, key);
+				ps2.setLong(2, 0);
+				ps2.setString(3, value);
+				execRaw(ps2);
+
+				// if we reached this point, then the parameter was created and the values should be in the table
+				return true;
+			} 	
+			catch (SQLException e) // if this exception is thrown, that means the key already exists, so update instead
+			{ 
+				// if there's a timeout exception, let it propagate further to prevent locking up the database routines
+				if(e.getErrorCode() == SQLiteErrorCode.SQLITE_BUSY.code)
+					throw e;
+
+				else
+				{
+					System.err.println("Exception encountered in SetParameter()!");
+					e.printStackTrace();
+				}
+			} 
+
+			// If it didn't hit the above return statement, then the key wasn't newly created
+			return false;
+		}
 	}
-	
-	
-	
-	
-	
+
+
+
+
+
 	/**
 	 * Writes the ReqMode to the database. This will run in a background thread.
 	 */
 	public void writeRequestModeToDB(ReqMode mode) {
 		Thread t = new Thread(() -> {
-			try { Main.db.setParameter("requestMode", mode.toString()); } 
+			try { setParameter("requestMode", mode.toString()); } 
 			catch (Exception e) 
 			{
 				Platform.runLater(() -> { new Alert(AlertType.ERROR, "Failed to write parameter \"requestMode\" to database!").show(); });
@@ -392,8 +428,84 @@ public class DatabaseIO
 		t.setName("writeRequestMode");
 		t.start();
 	}
+
+
+
+	/** Gets the current request mode */
+	public ReqMode getRequestMode()
+	{
+		String mode = readStringParam("requestMode");
+		ReqMode r = ReqMode.valueOf(mode);
+		return r;
+	}
+
+
+
+
+
+	/** Gets the size of the current queue */
+	public int getQueueSize()
+	{
+		RCTables.forwardQueueTable.verifyExists(db);
+		String sql = "SELECT COUNT(*) FROM " +RCTables.forwardQueueTable.getName();
+		int size = 0;
+
+		try {
+			ResultSet rs = execRaw(sql);
+			rs.next();
+			size = rs.getInt(1);
+
+			rs.close();
+		} catch (SQLException e) {
+			System.err.println("Error reading queue size");
+			e.printStackTrace();
+		}
+
+		return size;
+	}
 	
 	
+	
+	
+	
+	public void dumpTableToCSV(String path, DBTable table)
+	{	
+		try {
+			// Setup files
+			Files.deleteIfExists(new File(path).toPath());
+			
+			Writer w = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(path)));
+			
+			ArrayList<String> cols = new ArrayList<String>();
+			ResultSet rs = execRaw("SELECT * FROM " +table.getName()+ " WHERE 1=1;");
+			
+			// Get column names
+			int colCt = rs.getMetaData().getColumnCount();
+			for(int i=0; i<colCt; i++)
+			{
+				cols.add(rs.getMetaData().getColumnLabel(i+1));
+				w.write("\"" +cols.get(i)+"\"" +"\t");
+			}
+			w.write('\n');
+			
+			while(rs.next())
+			{
+				for(int j=0; j<colCt; j++)
+					w.write("\"" +rs.getString(j+1)+ "\"\t");
+				w.write('\n');
+					
+			}
+			
+			w.close();
+			
+			System.out.println("Finished Exporting table");
+				
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+
 
 
 

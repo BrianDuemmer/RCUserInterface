@@ -36,14 +36,16 @@ public class RCTables
 			new DBCol[] 
 					{
 							new DBCol("username", DBType.TEXT, true, false, "someone", false),
-							new DBCol("user_id", DBType.TEXT, true, true, "", false),
+							new DBCol("user_id", DBType.TEXT, true, false, "", false),
 							new DBCol("time_requested", DBType.INTEGER, true, false, "", false),
 							new DBCol("song_name", DBType.TEXT, true, false, "", false),
 							new DBCol("ost_name", DBType.TEXT, true, false, "", false),
 							new DBCol("franchise_name", DBType.TEXT),
 							new DBCol("rating_pct", DBType.REAL),
 							new DBCol("rating_num", DBType.INTEGER),
-							new DBCol("length", DBType.INTEGER)
+							new DBCol("length", DBType.REAL),
+							new DBCol("song_id", DBType.TEXT, true, false, "", false),
+							new DBCol("priority", DBType.INTEGER, true, false, "", false)
 					}, 
 					"time_requested"
 			);
@@ -59,15 +61,18 @@ public class RCTables
 			"queue_history", 
 			new DBCol[] 
 					{
-							new DBCol("username", DBType.TEXT, true, false, "someone", false),
-							new DBCol("user_id", DBType.TEXT, true, true, "", false),
-							new DBCol("time_played", DBType.INTEGER, true, false, "", false),
-							new DBCol("song_name", DBType.TEXT, true, false, "", false),
-							new DBCol("ost_name", DBType.TEXT, true, false, "", false),
-							new DBCol("franchise_name", DBType.TEXT),
-							new DBCol("rating_pct", DBType.REAL),
-							new DBCol("rating_num", DBType.INTEGER),
-							new DBCol("length", DBType.INTEGER)
+						new DBCol("username", DBType.TEXT, true, false, "someone", false),
+						new DBCol("user_id", DBType.TEXT, true, false, "", false),
+						new DBCol("time_requested", DBType.INTEGER, true, false, "", false),
+						new DBCol("song_name", DBType.TEXT, true, false, "", false),
+						new DBCol("ost_name", DBType.TEXT, true, false, "", false),
+						new DBCol("franchise_name", DBType.TEXT),
+						new DBCol("rating_pct", DBType.REAL),
+						new DBCol("rating_num", DBType.INTEGER),
+						new DBCol("length", DBType.REAL),
+						new DBCol("song_id", DBType.TEXT, true, false, "", false),
+						new DBCol("priority", DBType.INTEGER, true, false, "", false),
+						new DBCol("time_played", DBType.INTEGER, true, false, "", false)
 					}, 
 					"time_played"
 			);
@@ -128,7 +133,7 @@ public class RCTables
 					{
 							new DBCol("song_name", DBType.TEXT, true, false, "", false),
 							new DBCol("ost_name", DBType.TEXT, true, false, "", false),
-							new DBCol("song_length", DBType.INTEGER, true, false, "", false),
+							new DBCol("song_length", DBType.REAL, true, false, "", false),
 							new DBCol("rating_pct", DBType.REAL, true, false, "", false),
 							new DBCol("rating_num", DBType.INTEGER, true, false, "", false),
 							new DBCol("song_id", DBType.TEXT, true, true, "", false)

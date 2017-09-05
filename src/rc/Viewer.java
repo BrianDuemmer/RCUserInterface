@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-import application.Main;
+import application.Dystrack;
 import db.DatabaseIO;
 import db.RCTables;
 
@@ -32,6 +32,8 @@ public class Viewer
 	 */
 	public static final Viewer dysbot = new Viewer("UCq4Zg02QNxH3jrLW-1tBYvw", "DysBot");
 	
+	/** RNGsus's credentials. 'Nuff said. */
+	public static final Viewer RNGsus = new Viewer("UCOlo_l_Jmq6pUc1FIGYUimA", "RNGsus");
 	
 	
 	private String username = "";
@@ -63,17 +65,16 @@ public class Viewer
 	 */
 	public void queryUser()
 	{
-		RCTables.viewerTable.verifyExists(Main.db.getDb());
+		RCTables.viewerTable.verifyExists(Dystrack.db.getDb());
 		ResultSet rs = null;
 		
 		
 		try 
 		{
 			// create / execute SQL query
-			PreparedStatement ps = Main.db.getDb().prepareStatement("SELECT username, coins FROM ? WHERE channelID=?;");
-			ps.setString(1, RCTables.viewerTable.getName());
-			ps.setString(2, userID);
-			rs = Main.db.execRaw(ps);
+			PreparedStatement ps = Dystrack.db.getDb().prepareStatement("SELECT username, coins FROM " +RCTables.viewerTable.getName()+ " WHERE channelID=?;");
+			ps.setString(1, userID);
+			rs = Dystrack.db.execRaw(ps);
 			
 			if(rs == null) // bad statement
 				System.err.println("bad statement in queryUsername()!");
@@ -87,6 +88,7 @@ public class Viewer
 				rupees = rs.getInt(2);
 			}
 				
+			rs.close();
 		} catch (SQLException e) 
 		{
 			System.err.println("Exception encountered in queryUsername()");
@@ -121,7 +123,8 @@ public class Viewer
 		ResultSet res = null;
 		
 		try {
-			PreparedStatement ps = Main.db.getDb().prepareStatement("SELECT " // get everything, but make sure we know the order
+			RCTables.viewerTable.verifyExists(Dystrack.db.getDb());
+			PreparedStatement ps = Dystrack.db.getDb().prepareStatement("SELECT " // get everything, but make sure we know the order
 					+ "song_name, "
 					+ "ost_name, "
 					+ "length, "
@@ -133,7 +136,7 @@ public class Viewer
 			
 			ps.setString(1, userID);
 			ps.setLong(2, cutoff);
-			res = Main.db.execRaw(ps);
+			res = Dystrack.db.execRaw(ps);
 			
 			// iteratively extract the information, pulling parameters based on their order above
 			while(res.next())
@@ -142,6 +145,8 @@ public class Viewer
 				Rating r = new Rating(res.getInt(6), res.getDouble(7));
 				entries.add(new QueueEntry(this, res.getLong(5), r, s));
 			}
+			
+			res.close();
 		} catch (SQLException e) 
 		{
 			System.err.println("Exception encountered in getSongsPlayed()!");

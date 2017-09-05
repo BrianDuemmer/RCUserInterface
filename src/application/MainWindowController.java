@@ -1,15 +1,16 @@
 package application;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import db.RCTables;
+import foobarIO.Foobar;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -17,11 +18,6 @@ import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-
-/**
- * Sample Skeleton for 'MainWindow.fxml' Controller Class. Mine for the copying and pasting
- */
-
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -32,8 +28,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Tab;
@@ -44,11 +40,19 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DataFormat;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import rc.QueueEntry;
+import rc.RequestControl;
+import rc.Song;
 import util.TextAreaOutputStream;
+import util.Util;
 import util.ReqMode;
 import util.SmartPrintStream;
 
@@ -60,195 +64,143 @@ public class MainWindowController
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-	@FXML // fx:id="overviewPage"
-	private Tab overviewPage; // Value injected by FXMLLoader
+	@FXML private Tab overviewPage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="globalCostSclEntry"
-	private TextField globalCostSclEntry; // Value injected by FXMLLoader
+	@FXML private TextField globalCostSclEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="stdSongCooldownEntry"
-	private TextField stdSongCooldownEntry; // Value injected by FXMLLoader
+	@FXML private TextField stdSongCooldownEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="syserrLogTxtbox"
-	private TextArea syserrLogTxtbox; // Value injected by FXMLLoader
+	@FXML private TextArea syserrLogTxtbox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="databasePage"
-	private Tab databasePage; // Value injected by FXMLLoader
+	@FXML private Tab databasePage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideHistoryExpireMinsCol"
-	private TableColumn<?, ?> songOverrideHistoryExpireMinsCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> songOverrideHistoryExpireMinsCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueUsernameCol"
-	private TableColumn<QueueEntry, String> currentQueueUsernameCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<QueueEntry, String> currentQueueUsernameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueRatingCol"
-	private TableColumn<QueueEntry, String> currentQueueRatingCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<QueueEntry, String> currentQueueRatingCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueLengthCol"
-	private TableColumn<QueueEntry, String> currentQueueLengthCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<QueueEntry, String> currentQueueLengthCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="requestManualBtn"
-	private ToggleButton requestManualBtn; // Value injected by FXMLLoader
+	@FXML private ToggleButton requestManualBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersPage"
-	private Tab vipUsersPage; // Value injected by FXMLLoader
+	@FXML private Tab vipUsersPage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="databaseWebView"
-	private WebView databaseWebView; // Value injected by FXMLLoader
+	@FXML private WebView databaseWebView; // Value injected by FXMLLoader
 
-	@FXML // fx:id="freeRequestsBox"
-	private CheckBox freeRequestsBox; // Value injected by FXMLLoader
+	@FXML private CheckBox freeRequestsBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="baseImmediateReplaySclEntry"
-	private TextField baseImmediateReplaySclEntry; // Value injected by FXMLLoader
+	@FXML private TextField baseImmediateReplaySclEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="viewSysoLogBtn"
-	private Button viewSysoLogBtn; // Value injected by FXMLLoader
+	@FXML private Button viewSysoLogBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersNoteCol"
-	private TableColumn<?, ?> vipUsersNoteCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> vipUsersNoteCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="ignoreHistoryBox"
-	private CheckBox ignoreHistoryBox; // Value injected by FXMLLoader
+	@FXML private CheckBox ignoreHistoryBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersUserIDCol"
-	private TableColumn<?, ?> vipUsersUserIDCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> vipUsersUserIDCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueOpenBox"
-	private CheckBox queueOpenBox; // Value injected by FXMLLoader
+	@FXML private CheckBox queueOpenBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueCloseMinsEntry"
-	private TextField queueCloseMinsEntry; // Value injected by FXMLLoader
+	@FXML private TextField queueCloseMinsEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="tabPage"
-	private TabPane tabPage; // Value injected by FXMLLoader
+	@FXML private TabPane tabPage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistUserIDCol"
-	private TableColumn<?, ?> userBlacklistUserIDCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> userBlacklistUserIDCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="exportQueueBtn"
-	private Button exportQueueBtn; // Value injected by FXMLLoader
+	@FXML private Button exportQueueBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueNameCol"
-	private TableColumn<QueueEntry, String> currentQueueNameCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<QueueEntry, String> currentQueueNameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="baseSongPriceMinEntry"
-	private TextField baseSongPriceMinEntry; // Value injected by FXMLLoader
+	@FXML private TextField baseSongPriceMinEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="revertParamsBtn"
-	private Button revertParamsBtn; // Value injected by FXMLLoader
+	@FXML private Button revertParamsBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueSizeLabel"
-	private Label queueSizeLabel; // Value injected by FXMLLoader
+	@FXML private Label queueSizeLabel; // Value injected by FXMLLoader
 
-	@FXML // fx:id="sysoLogTxtbox"
-	private TextArea sysoLogTxtbox; // Value injected by FXMLLoader
+	@FXML private TextArea sysoLogTxtbox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="baseHistoryExpireMinsEntry"
-	private TextField baseHistoryExpireMinsEntry; // Value injected by FXMLLoader
+	@FXML private TextField baseHistoryExpireMinsEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueOSTCol"
-	private TableColumn<QueueEntry, String> currentQueueOSTCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<QueueEntry, String> currentQueueOSTCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueOpenMinsEntry"
-	private TextField queueOpenMinsEntry; // Value injected by FXMLLoader
+	@FXML private TextField queueOpenMinsEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistTimeBannedCol"
-	private TableColumn<?, ?> userBlacklistTimeBannedCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> userBlacklistTimeBannedCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="percentRandomSlider"
-	private Slider percentRandomSlider; // Value injected by FXMLLoader
+	@FXML private Slider percentRandomSlider; // Value injected by FXMLLoader
 
-	@FXML // fx:id="clearSysoConsoleBtn"
-	private Button clearSysoConsoleBtn; // Value injected by FXMLLoader
+	@FXML private Button clearSysoConsoleBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideBaseCostCol"
-	private TableColumn<?, ?> songOverrideBaseCostCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> songOverrideBaseCostCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="viewSyserrLogBtn"
-	private Button viewSyserrLogBtn; // Value injected by FXMLLoader
+	@FXML private Button viewSyserrLogBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueue"
-	private TableView<QueueEntry> currentQueue; // Value injected by FXMLLoader
+	@FXML private TableView<QueueEntry> currentQueue; // Value injected by FXMLLoader
 
-	@FXML // fx:id="dontRecordHistoryBox"
-	private CheckBox dontRecordHistoryBox; // Value injected by FXMLLoader
+	@FXML private CheckBox dontRecordHistoryBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistPage"
-	private Tab userBlacklistPage; // Value injected by FXMLLoader
+	@FXML private Tab userBlacklistPage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistTable"
-	private TableView<?> userBlacklistTable; // Value injected by FXMLLoader
+	@FXML private TableView<?> userBlacklistTable; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersCostSclCol"
-	private TableColumn<?, ?> vipUsersCostSclCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> vipUsersCostSclCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueUserIDCol"
-	private TableColumn<QueueEntry, String> currentQueueUserIDCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<QueueEntry, String> currentQueueUserIDCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverridePage"
-	private Tab songOverridePage; // Value injected by FXMLLoader
+	@FXML private Tab songOverridePage; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideImmediateRelaySclCol"
-	private TableColumn<?, ?> songOverrideImmediateRelaySclCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> songOverrideImmediateRelaySclCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="requestsAutoBox"
-	private CheckBox requestsAutoBox; // Value injected by FXMLLoader
+	@FXML private CheckBox requestsAutoBox; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistNoteCol"
-	private TableColumn<?, ?> userBlacklistNoteCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> userBlacklistNoteCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="stdUserCooldownEntry"
-	private TextField stdUserCooldownEntry; // Value injected by FXMLLoader
+	@FXML private TextField stdUserCooldownEntry; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueueTimeRequestedCol"
-	private TableColumn<QueueEntry, String> currentQueueTimeRequestedCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<QueueEntry, String> currentQueueTimeRequestedCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideSongNameCol"
-	private TableColumn<?, ?> songOverrideSongNameCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> songOverrideSongNameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="reqManualControl"
-	private ToggleGroup reqManualControl; // Value injected by FXMLLoader
+	@FXML private ToggleGroup reqManualControl; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideTable"
-	private TableView<?> songOverrideTable; // Value injected by FXMLLoader
+	@FXML private TableView<?> songOverrideTable; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersUsernameCol"
-	private TableColumn<?, ?> vipUsersUsernameCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> vipUsersUsernameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="currentQueuePriorityCol"
-	private TableColumn<QueueEntry, Number> currentQueuePriorityCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<QueueEntry, Number> currentQueuePriorityCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="requestSessionPctFullBar"
-	private ProgressBar requestSessionPctFullBar; // Value injected by FXMLLoader
+	@FXML private ProgressBar requestSessionPctFullBar; // Value injected by FXMLLoader
 
-	@FXML // fx:id="queueLengthLabel"
-	private Label queueLengthLabel; // Value injected by FXMLLoader
+	@FXML private Label queueLengthLabel; // Value injected by FXMLLoader
 
-	@FXML // fx:id="userBlacklistUsernameCol"
-	private TableColumn<?, ?> userBlacklistUsernameCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> userBlacklistUsernameCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="songOverrideOwningOSTCol"
-	private TableColumn<?, ?> songOverrideOwningOSTCol; // Value injected by FXMLLoader
+	@FXML private TableColumn<?, ?> songOverrideOwningOSTCol; // Value injected by FXMLLoader
 
-	@FXML // fx:id="vipUsersTable"
-	private TableView<?> vipUsersTable; // Value injected by FXMLLoader
+	@FXML private TableView<?> vipUsersTable; // Value injected by FXMLLoader
 
-	@FXML // fx:id="clearSyserrConsoleBtn"
-	private Button clearSyserrConsoleBtn; // Value injected by FXMLLoader
+	@FXML private Button clearSyserrConsoleBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="saveParamsBtn"
-	private Button saveParamsBtn; // Value injected by FXMLLoader
+	@FXML private Button saveParamsBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="addSongBtn"
-	private Button addSongBtn; // Value injected by FXMLLoader
+	@FXML private Button addSongBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="addRandomBtn"
-	private Button addRandomBtn; // Value injected by FXMLLoader
+	@FXML private Button addRandomBtn; // Value injected by FXMLLoader
 
-	@FXML // fx:id="regenPlaylistBtn"
-	private Button regenPlaylistBtn; // Value injected by FXMLLoader
+	@FXML private Button regenPlaylistBtn; // Value injected by FXMLLoader
 
+	@FXML private Button resetFoobarBtn;
+
+	@FXML private ToggleButton foobarPlayStatusBtn;
+
+	@FXML private CheckBox foobarOpenBox;
+
+	@FXML private Button skipSongBtn;
+
+	@FXML private Label nowPlayingLabel;
+
+	@FXML private MenuItem queueTableMenuRemoveSong;
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -319,43 +271,52 @@ public class MainWindowController
 	}
 
 
-
-
-	@FXML
-	void viewSysoLogOnAction(ActionEvent event) {
-
+	/** Starts or resets foobar2000 */
+	@FXML void resetFoobarOnAction(ActionEvent event) 
+	{ 
+		// Reset it to get foobar into a known state, ready to go
+		Dystrack.foobar.startFoobar(Dystrack.rc.getAddSong());
+		foobarPlayStatusBtn.setDisable(false);
 	}
 
-	/**
-	 * Clears the system.out console
-	 * @param event
-	 */
-	@FXML
-	void clearSysoLogConsoleBtnOnAction(ActionEvent event) { sysoLogTxtbox.clear(); }
-
-	@FXML
-	void viewSyserrLogOnAction(ActionEvent event) {
-
+	/** Pauses or plays the foobar feed */
+	@FXML void foobarPlayStatusBtnOnAction(ActionEvent event)
+	{ 
+		boolean playing = foobarPlayStatusBtn.isSelected();
+		if(playing)
+			Dystrack.foobar.playPlayback();
+		else
+			Dystrack.foobar.pausePlayback();
 	}
 
 
-	/**
-	 * Clears the system.err console
-	 * @param event
-	 */
-	@FXML
-	void clearSyserrConsoleBtnOnAction(ActionEvent event) { syserrLogTxtbox.clear(); }
+	/** When foobar receives a play command if a song is playing, it will skip that song. Only run if foobar's playing */
+	@FXML void skipSongBtnOnAction(ActionEvent event) { 
+		if(Dystrack.foobar.isPlaying())
+			Dystrack.foobar.playPlayback(); 
+	}
+
+
+	/** Clears the system.out console */
+	@FXML void clearSysoLogConsoleBtnOnAction(ActionEvent event) { sysoLogTxtbox.clear(); }
+
+
+	@FXML void viewSyserrLogOnAction(ActionEvent event) { }
+	@FXML void viewSysoLogOnAction(ActionEvent event) { }
+
+	/** Clears the system.err console */
+	@FXML void clearSyserrConsoleBtnOnAction(ActionEvent event) { syserrLogTxtbox.clear(); }
 
 
 	// All of the text entry parameters get verified, and written from here
-	@FXML void queueOpenMinsOnAction(ActionEvent event) { writeDoubleTextFieldToDB("queueOpenMins", queueOpenMinsEntry); }
-	@FXML void queueCloseMinsOnAction(ActionEvent event) { writeDoubleTextFieldToDB("queueCloseMins", queueCloseMinsEntry); }
-	@FXML void stdSongCooldownOnAction(ActionEvent event) { writeDoubleTextFieldToDB("stdSongCooldown", stdSongCooldownEntry); }
-	@FXML void stdUserCooldownOnAction(ActionEvent event) { writeDoubleTextFieldToDB("stdUserCooldown", stdUserCooldownEntry); }
-	@FXML void globalCostSclOnAction(ActionEvent event) { writeDoubleTextFieldToDB("globalCostScl", globalCostSclEntry); }
-	@FXML void baseSongPriceMinOnAction(ActionEvent event) { writeDoubleTextFieldToDB("baseSongPriceMin", baseSongPriceMinEntry); }
-	@FXML void baseHistoryExpireMinsOnAction(ActionEvent event) { writeDoubleTextFieldToDB("baseHistoryExpireMins", baseHistoryExpireMinsEntry); }
-	@FXML void baseImmediateReplaySclOnAction(ActionEvent event) { writeDoubleTextFieldToDB("baseImmediateReplayScl", baseImmediateReplaySclEntry); }
+	@FXML void queueOpenMinsOnAction(ActionEvent event) { Util.writeDoubleTextFieldToDB("queueOpenMins", queueOpenMinsEntry); }
+	@FXML void queueCloseMinsOnAction(ActionEvent event) { Util.writeDoubleTextFieldToDB("queueCloseMins", queueCloseMinsEntry); }
+	@FXML void stdSongCooldownOnAction(ActionEvent event) { Util.writeDoubleTextFieldToDB("stdSongCooldown", stdSongCooldownEntry); }
+	@FXML void stdUserCooldownOnAction(ActionEvent event) { Util.writeDoubleTextFieldToDB("stdUserCooldown", stdUserCooldownEntry); }
+	@FXML void globalCostSclOnAction(ActionEvent event) { Util.writeDoubleTextFieldToDB("globalCostScl", globalCostSclEntry); }
+	@FXML void baseSongPriceMinOnAction(ActionEvent event) { Util.writeDoubleTextFieldToDB("baseSongPriceMin", baseSongPriceMinEntry); }
+	@FXML void baseHistoryExpireMinsOnAction(ActionEvent event) { Util.writeDoubleTextFieldToDB("baseHistoryExpireMins", baseHistoryExpireMinsEntry); }
+	@FXML void baseImmediateReplaySclOnAction(ActionEvent event) { Util.writeDoubleTextFieldToDB("baseImmediateReplayScl", baseImmediateReplaySclEntry); }
 
 
 	/**
@@ -363,36 +324,22 @@ public class MainWindowController
 	 * "Auto" checkbox is selected
 	 * @param event unused, can be null
 	 */
-	@FXML
-	void requestsAutoBoxOnAction(ActionEvent event) {
+	@FXML void requestsAutoBoxOnAction(ActionEvent event) {
 		boolean isPressed = requestsAutoBox.isSelected();
 		requestManualBtn.setDisable(isPressed);
 
 		// push changes to the database
-		Main.db.writeRequestModeToDB(getCurrReqMode());
+		Dystrack.db.writeRequestModeToDB(getCurrReqMode());
 	}
 
 
 	/**
 	 * Just push changes to the database
 	 */
-	@FXML
-	void requestManualBtnOnAction(ActionEvent event) { Main.db.writeRequestModeToDB(getCurrReqMode()); }
-
-	@FXML
-	void freeRequestsBoxOnAction(ActionEvent event) {
-
-	}
-
-	@FXML
-	void ignoreHistoryBoxOnAction(ActionEvent event) {
-
-	}
-
-	@FXML
-	void dontRecordHistoryBoxOnAction(ActionEvent event) {
-
-	}
+	@FXML void requestManualBtnOnAction(ActionEvent event) { Dystrack.db.writeRequestModeToDB(getCurrReqMode()); }
+	@FXML void freeRequestsBoxOnAction(ActionEvent event) { writeCheckboxToDB(freeRequestsBox, "freeRequests"); }
+	@FXML void ignoreHistoryBoxOnAction(ActionEvent event) {  writeCheckboxToDB(ignoreHistoryBox, "ignoreHistory");  }
+	@FXML void dontRecordHistoryBoxOnAction(ActionEvent event) {  writeCheckboxToDB(dontRecordHistoryBox, "dontRecordHistory");  }
 
 	@FXML
 	void saveParamsBtnOnAction(ActionEvent event) 
@@ -405,32 +352,60 @@ public class MainWindowController
 	void revertParamsBtnOnAction(ActionEvent event) 
 	{ 
 		System.out.println("Reverting configuration parameters...");
-		this.loadConfigParams();
+		this.readConfigParams();
 	}
 
-	@FXML
-	void exportQueueBtnOnAction(ActionEvent event) {
-		writeQueueToDB(); // TEMPORARY!!!!
+	@FXML void exportQueueBtnOnAction(ActionEvent event) 
+	{ 
+		Thread t = new Thread(() -> { 
+			Dystrack.db.dumpTableToCSV(Dystrack.queueDumpPath, RCTables.forwardQueueTable); 
+			Platform.runLater(() -> {
+				Alert a = new Alert(AlertType.INFORMATION, "Successfulley dumped the queue to the file \"" +Dystrack.queueDumpPath+ "\"");
+				a.show();
+			});
+		});
+		
+		t.setDaemon(true);
+		t.setName("dumpQueue");
+		t.start();
+	}
+	
+	
+	
+	@FXML void addSongRandom(ActionEvent event) 
+	{ 
+		Thread t = new Thread(() -> {
+			QueueEntry q = QueueEntry.uniformRandomEntry();
+			q.writeToDB();
+
+			Platform.runLater(() -> { readQueueToTable(); });
+		});
+
+		t.setDaemon(true);
+		t.setName("addSongRandom");
+		t.start();
 	}
 
-	@FXML
-	void addSongRandom(ActionEvent event)
-	{
 
-	}
+
 
 	@FXML
 	void addSongManual(ActionEvent event)
 	{
 		Parent root;
 		try {
-			root = FXMLLoader.load(getClass().getClassLoader().getResource("application/SongEntry.fxml"));
+			root = FXMLLoader.load(getClass().getClassLoader().getResource("application/DropdownSongEntry.fxml"));
 			Stage stage = new Stage();
 			stage.setTitle("Enter a song");
-			stage.setScene(new Scene(root, 450, 169));
+			stage.setScene(new Scene(root));
 			stage.setResizable(false);
-			stage.showAndWait(); // Wait for that system to finish, then update the queue table
-			readQueueToTable();
+			stage.showAndWait(); 
+
+			// Wait for that system to finish, then update the queue table (in the background)
+			Thread t = new Thread(() -> { readQueueToTable(); });
+			t.setDaemon(true);
+			t.setName("readQueueToTable");
+			t.start();
 
 		} catch(Exception e)
 		{
@@ -465,6 +440,81 @@ public class MainWindowController
 
 
 
+	@FXML void queueTableMenuRemoveSongOnAction(ActionEvent event)
+	{
+		int idx = currentQueue.getSelectionModel().getFocusedIndex();
+		if(idx != -1)
+		{
+			QueueEntry q = queueEntries.remove(idx);
+			Thread t = new Thread(() -> { 
+				q.deleteFromForwardQueue(); 
+				readQueueToTable();
+			});
+
+			t.setDaemon(true);
+			t.setName("Delete from queue");
+			t.start();
+		}
+
+
+	}
+	
+	
+	
+	// https://stackoverflow.com/questions/12353576/drag-drop-in-javafx-table
+	// https://javafxdeveloper.wordpress.com/2013/10/28/simple-drag-and-drop-tutorial/
+	// Is where The code for the drag & drop stuff came from
+	@FXML void currentQueueDragDetected(MouseEvent event)
+	{
+//		System.out.println("drag detected");
+//		QueueEntry sel = currentQueue.getSelectionModel().getSelectedItem();
+//		if(sel != null)
+//		{
+//			Dragboard db = currentQueue.startDragAndDrop(TransferMode.ANY);
+//			ClipboardContent cc = new ClipboardContent();
+//			cc.put(queueEntryDataFormat, sel);
+//			db.setContent(cc);
+//			event.consume();
+//		}
+	}
+	
+	
+	
+	@FXML void currentQueueDragOver(DragEvent event)
+	{
+//		System.out.println("drag over");
+//		Dragboard db = event.getDragboard();
+//		if(db.hasContent(queueEntryDataFormat))
+//			event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+//		
+//		event.consume();
+	}
+	
+	
+	
+	
+	@FXML void currentQueueDragDropped(DragEvent event)
+	{
+//		System.out.println("drag dropped");
+//		Dragboard db = event.getDragboard();
+//		boolean success = false;
+//		
+//		if(db.hasContent(queueEntryDataFormat))
+//		{
+//			QueueEntry q = (QueueEntry) db.getContent(queueEntryDataFormat);
+//			queueEntries.add(q);
+//			currentQueue.setItems(queueEntries);
+//			success = true;
+//		}
+//		
+//		event.setDropCompleted(success);
+//		event.consume();
+	}
+
+
+
+
+
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////  REGULAR OBJECTS ///////////////////////////////////////////////
@@ -472,6 +522,9 @@ public class MainWindowController
 
 	// Lists all of the queue entries in the database and the tableview
 	private ObservableList<QueueEntry> queueEntries;
+	
+	@SuppressWarnings("unused")
+	private DataFormat queueEntryDataFormat = new DataFormat("queueEntry");
 
 
 
@@ -486,22 +539,32 @@ public class MainWindowController
 	void initialize() 
 	{
 		asserts();
-		// set up phplitemyadmin
-		databaseWebView.getEngine().load("http://localhost/phpliteadmin.php");
+
+
+		// Setup output files
+		PrintWriter stdOutFil = null;
+		PrintWriter stdErrFil = null;
+		try {
+			stdOutFil = new PrintWriter(new FileOutputStream(Dystrack.appDir + "\\stdout.log", true));
+			stdErrFil = new PrintWriter(new FileOutputStream(Dystrack.appDir + "\\stderr.log", true));
+		} catch (FileNotFoundException e1) { System.err.println("failed to initialize log files"); }
+
 
 		// redirect syso / syserr to go to the onscreen 
-		PrintStream newOut = new SmartPrintStream(new TextAreaOutputStream(sysoLogTxtbox));
+		PrintStream newOut = new SmartPrintStream(new TextAreaOutputStream(sysoLogTxtbox), stdOutFil);
 		System.setOut(newOut);
-		PrintStream newErr = new SmartPrintStream(new TextAreaOutputStream(syserrLogTxtbox));
+		PrintStream newErr = new SmartPrintStream(new TextAreaOutputStream(syserrLogTxtbox), stdErrFil);
 		System.setErr(newErr);
+
+
 
 		System.out.println("Initializing primary controller...");
 
 		// Add listeners to the control properties that need them
 		// manual request mode, have button text change based on whether or not it is selected
 		requestManualBtn.selectedProperty().addListener(new ChangeListener<Boolean>() {
-			@Override
-			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+
+			@Override public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
 				if(newValue.booleanValue()) // button pressed, set text to "Open"
 					requestManualBtn.setText("Open");
 				else // button not pressed, set text to "closed"
@@ -509,16 +572,28 @@ public class MainWindowController
 			}
 		});
 
+
+		// Foobar play status, same deal as above
+		foobarPlayStatusBtn.selectedProperty().addListener(new ChangeListener<Boolean>() {
+
+			@Override public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue) {
+				if(newValue.booleanValue()) // pressed, click to pause
+					foobarPlayStatusBtn.setText("Pause Foobar");
+				else // released, click to play
+					foobarPlayStatusBtn.setText("Play Foobar");
+			}
+		});
+
+
+
 		// initialize the database - Block the UI thread with this because we don't want the UI to initialize
 		// without the database ready, but we also want syso and syserr redirected to the onscreen text boxes beforehand
-		try { Main.db.verifyConnected(); }
+		try { Dystrack.db.verifyConnected(); }
 		catch (Exception e) {
 			Alert a = new Alert(AlertType.ERROR, "FATAL: Failed to open database connection! Check error log for more details.");
 			a.setTitle("Database error");
 			a.setHeaderText("Database Error");
-
 			e.printStackTrace(); // print to the error log before showing the error message
-
 			a.showAndWait();
 		}
 
@@ -527,13 +602,19 @@ public class MainWindowController
 		bindParametersOffFocus();
 
 		// Load all of the parameters to the UI
-		loadConfigParams();
+		readConfigParams();
 
 		// Initialize the tableViews
 		initQueueTable();
+		readQueueToTable();
 
-		// Initialize the update services
-		Main.UIUpdateService.scheduleAtFixedRate(uiUpdateTask, 0, 1500, TimeUnit.MILLISECONDS); // Run immediately, 1.5 seconds between each update
+		// Initialize the update services 
+		Dystrack.UIUpdateService.scheduleAtFixedRate(uiUpdateTask, 1000, Dystrack.UIUpdateMillis, TimeUnit.MILLISECONDS); // Run immediately, 1.5 seconds between each update
+
+		// Init the main controller / foobar interfaces
+		Dystrack.rc = new RequestControl();
+		Dystrack.foobar = new Foobar(Dystrack.foobarPath);
+		RCTables.queueHistoryTable.verifyExists(Dystrack.db.getDb());
 	}
 
 
@@ -589,48 +670,12 @@ public class MainWindowController
 
 
 
-	/**
-	 * Verifies a textField for data valididty (As a double), alerts the user if something's wrong, or
-	 * writes to the database if it's good 
-	 * @param name the settings key name to write to
-	 * @param field
-	 */
-	private void writeDoubleTextFieldToDB(String name, TextField field) {
-		try {
-			double val = Double.parseDouble(field.getText()); // Attempt to parse out the field
-
-			Thread t = new Thread(() -> {  // If we get here the field is valid, so we can push it to the database
-				try { Main.db.setParameter(name, val); } 
-
-				// DB error. Usually an SQLITE_BLOCKED due to the DB viewer being open with pending writes
-				catch (SQLException e) {new Alert(AlertType.ERROR, "Failed to push parameter \"" +name+ "\" to database. See error log for more details").showAndWait(); }
-			});
-
-			t.setDaemon(true);
-			t.setName("WriteDoubleTextFieldToDB");
-			t.start();
-		} catch (Exception e) // format / display the error message, then update the field to be a safe value
-		{
-			Alert a = new Alert(AlertType.ERROR);
-			a.setContentText("The value \"" +field.getText()+ "\" is not a valid number!");
-			a.setTitle("Bad input!");
-			a.setHeaderText("Bad input!");
-			a.showAndWait();
-
-			field.setText("0");
-		}
-	}
-
-
-
-
-
 
 	/**
 	 * Sets up the queue tableview to accept an @link QueueEntry object
 	 */
 	private void initQueueTable()
-	{
+	{		
 		// Convert the UNIX timestamp to a nice looking date
 		currentQueueTimeRequestedCol.setCellValueFactory(cellData -> 
 		{
@@ -644,11 +689,11 @@ public class MainWindowController
 		//Convert the length in seconds to the format mins:ss
 		currentQueueLengthCol.setCellValueFactory(cellData -> 
 		{
-			int len = cellData.getValue().getSong().getLength();
+			double len = cellData.getValue().getSong().getLength();
 
 			// format time as Mins:ss
 			SimpleStringProperty prop = new SimpleStringProperty();
-			prop.set(String.format("%d:%02d", Math.floorDiv(len, 60), len%60));
+			prop.set(Util.secsToTimeString((int) len));
 			return prop;
 		});
 
@@ -724,7 +769,7 @@ public class MainWindowController
 	/**
 	 * Loads all of the configuration parameters from the database to the UI
 	 */
-	private void loadConfigParams()
+	private void readConfigParams()
 	{
 		System.out.println("Loading configuration parameters...");
 
@@ -736,21 +781,21 @@ public class MainWindowController
 				try 
 				{
 					// parameter values - fetch here to use in the background thread that updates the UI
-					double prs = Main.db.readRealParam("percentRandom");
-					String qome = Main.db.readStringParam("queueOpenMins");
-					String qcme = Main.db.readStringParam("queueCloseMins");
-					String ssce = Main.db.readStringParam("stdSongCooldown");
-					String gcse = Main.db.readStringParam("stdUserCooldown");
-					String suce = Main.db.readStringParam("globalCostScl");
-					String bspme = Main.db.readStringParam("baseSongPriceMin");
-					String bheme = Main.db.readStringParam("baseHistoryExpireMins");
-					String birse = Main.db.readStringParam("baseImmediateReplayScl");
+					double prs = Dystrack.db.readRealParam("percentRandom");
+					String qome = Dystrack.db.readStringParam("queueOpenMins");
+					String qcme = Dystrack.db.readStringParam("queueCloseMins");
+					String ssce = Dystrack.db.readStringParam("stdSongCooldown");
+					String gcse = Dystrack.db.readStringParam("stdUserCooldown");
+					String suce = Dystrack.db.readStringParam("globalCostScl");
+					String bspme = Dystrack.db.readStringParam("baseSongPriceMin");
+					String bheme = Dystrack.db.readStringParam("baseHistoryExpireMins");
+					String birse = Dystrack.db.readStringParam("baseImmediateReplayScl");
 
 					// Control fields info
-					ReqMode requestMode = ReqMode.valueOf(Main.db.readStringParam("requestMode"));
-					boolean freeReqests = Main.db.readBoolParam("freeRequests");
-					boolean ignoreHistory = Main.db.readBoolParam("ignoreHistory");
-					boolean dontRecordHistory = Main.db.readBoolParam("dontRecordHistory");
+					ReqMode requestMode = Dystrack.db.getRequestMode();
+					boolean freeReqests = Dystrack.db.readBoolParam("freeRequests");
+					boolean ignoreHistory = Dystrack.db.readBoolParam("ignoreHistory");
+					boolean dontRecordHistory = Dystrack.db.readBoolParam("dontRecordHistory");
 
 
 					Platform.runLater(() -> // only update the GUI in app thread
@@ -827,15 +872,15 @@ public class MainWindowController
 			protected Void call() throws Exception
 			{
 				try {
-					Main.db.setParameter("percentRandom", prs);
-					Main.db.setParameter("queueOpenMins", qome);
-					Main.db.setParameter("queueCloseMins", qcme);
-					Main.db.setParameter("stdSongCooldown", ssce);
-					Main.db.setParameter("stdUserCooldown", suce);
-					Main.db.setParameter("globalCostScl", gcse);
-					Main.db.setParameter("baseSongPriceMin", bspme);
-					Main.db.setParameter("baseHistoryExpireMins", bheme);
-					Main.db.setParameter("baseImmediateReplayScl", birse);
+					Dystrack.db.setParameter("percentRandom", prs);
+					Dystrack.db.setParameter("queueOpenMins", qome);
+					Dystrack.db.setParameter("queueCloseMins", qcme);
+					Dystrack.db.setParameter("stdSongCooldown", ssce);
+					Dystrack.db.setParameter("stdUserCooldown", suce);
+					Dystrack.db.setParameter("globalCostScl", gcse);
+					Dystrack.db.setParameter("baseSongPriceMin", bspme);
+					Dystrack.db.setParameter("baseHistoryExpireMins", bheme);
+					Dystrack.db.setParameter("baseImmediateReplayScl", birse);
 
 					System.out.println("Finished writing params");
 				} catch(Exception e) 
@@ -862,12 +907,62 @@ public class MainWindowController
 
 
 	/**
+	 * Reads the variable values from the database. <p/>
+	 * <b>NOTE</b>: This assumes it will be called in a background thread explicitly, 
+	 * so don't call it from the UI thread!
+	 */
+	private void readVars()
+	{	
+		double reqSessionPctFull = Dystrack.db.readRealParam("reqSessionPctFull");
+		int queueSize = Dystrack.db.readIntegerParam("queueSize");
+		double queueLength = Dystrack.db.readRealParam("queueLength");
+		boolean queueOpen = Dystrack.db.readBoolParam("queueOpen");
+		boolean foobarOpen = Dystrack.db.readBoolParam("foobarOpen");
+
+		Platform.runLater(() -> {
+			if(getCurrReqMode() != ReqMode.AUTO) // session % full is only valid when in automatic mode
+				requestSessionPctFullBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+			else
+				requestSessionPctFullBar.setProgress(reqSessionPctFull);
+
+			// Update the other variables
+			queueLengthLabel.setText(Util.secsToTimeString((int) queueLength)+ " minutes");
+			queueSizeLabel.setText(queueSize+ " songs");
+			queueOpenBox.setSelected(queueOpen);
+			foobarOpenBox.setSelected(foobarOpen);
+
+			// Format the now playing tab
+			String npt = "";
+			Song song = Dystrack.foobar.getCurrSong();
+
+			if(Dystrack.foobar.isPlaying() && song != null)
+			{
+				npt = String.format("NOW PLAYING: \"%s - %s\":  %s / %s", 
+						Util.ellipseTrim(50, song.getOstName()), 
+						Util.ellipseTrim(100, song.getSongName()),
+						Util.secsToTimeString((int) (song.getLength() - Dystrack.foobar.getCurrSongRemaining())),
+						Util.secsToTimeString((int) song.getLength()));
+			} else
+				npt = "Not Playing Anything!";
+			nowPlayingLabel.setText(npt);
+
+			// set the Foobar state box as disabled if necessary
+			//				foobarPlayStatusBtn.setDisable(!foobarOpen);
+		});
+	}
+
+
+
+
+	/**
 	 * Reads the forward queue from the database, and updates the queue table on the GUI.<p/>
 	 * <b>NOTE</b>: This method does not implicitly create a background thread to run the 
 	 * database queries (but will run UI updates in the UI thread), so it should be called
 	 * explicitly from a background thread
+	 * 
+	 * @deprecated use the {@link #smartReadQueueToTable()} version instead
 	 */
-	private void readQueueToTable()
+	public void readQueueToTable()
 	{
 		queueEntries = QueueEntry.getForwardQueue(); 
 
@@ -875,6 +970,43 @@ public class MainWindowController
 			currentQueue.getItems().clear();
 			currentQueue.getItems().addAll(queueEntries);
 		});
+	}
+
+
+
+
+
+	/**
+	 * Reads the queue to the table, but only updates what needs to be updated, that is, 
+	 * what's different <p/>
+	 * <b>NOTE</b>: This method does not implicitly create a background thread to run the 
+	 * database queries (but will run UI updates in the UI thread), so it should be called
+	 * explicitly from a background thread
+	 */
+	public void smartReadQueueToTable1()
+	{
+		ObservableList<QueueEntry> dbEntries = QueueEntry.getForwardQueue();
+
+		Platform.runLater(() -> {
+			if(queueEntries != null)
+			{
+				int tblSize = queueEntries.size();
+
+				// loop through, take out all the different ones
+				for(int i=0; i< dbEntries.size(); i++)
+				{
+					if(tblSize >= i) { // these are new entries, so just add them
+						queueEntries.add(dbEntries.get(i));
+						tblSize++;
+					} else if(!dbEntries.get(i).equals(queueEntries.get(i))) // the elements at this index are different, so update
+						queueEntries.set(i, dbEntries.get(i));
+				}
+			} else // It hasn't been initialized yet, so just copy over the whole thing
+				 queueEntries = dbEntries;
+			
+			currentQueue.setItems(queueEntries); // commit
+		});
+
 	}
 
 
@@ -893,8 +1025,8 @@ public class MainWindowController
 			protected Void call() throws Exception 
 			{
 				try { 
-					RCTables.forwardQueueTable.verifyExists(Main.db.getDb());
-					Main.db.execRaw("DELETE FROM " +RCTables.forwardQueueTable.getName());  // empty the table
+					RCTables.forwardQueueTable.verifyExists(Dystrack.db.getDb());
+					Dystrack.db.execRaw("DELETE FROM " +RCTables.forwardQueueTable.getName());  // empty the table
 					for(QueueEntry q : queueEntries) // Write each entry one by one
 						q.writeToDB();
 
@@ -974,6 +1106,45 @@ public class MainWindowController
 			if(oldVal.booleanValue())
 				baseImmediateReplaySclOnAction(null); 
 		});
+
+		// OnAction for this is disabled as that method gets spammed when dragging the slider, which wreaks havoc. Just write whenever focus is lost.
+		percentRandomSlider.focusedProperty().addListener((arg0, oldVal, newVal) -> { 
+			if(oldVal.booleanValue())
+			{
+				Thread t = new Thread(() -> {
+					try { Dystrack.db.setParameter("percentRandom", percentRandomSlider.getValue()); } 
+					catch (Exception e) {
+						e.printStackTrace();
+						Dystrack.databaseErrorAlert.showAndWait();
+					}
+				});
+
+				t.setName("updatePercentRandom");
+				t.setDaemon(true);
+				t.start();
+			}
+		});
+	}
+
+
+
+
+	/**
+	 * Writes the value of the given checkbox to the database
+	 */
+	private void writeCheckboxToDB(CheckBox box, String name) {
+		Thread t = new Thread(() -> {
+			try {
+				Dystrack.db.setParameter(name, box.isSelected());
+			} catch (Exception e) {
+				e.printStackTrace();
+				Dystrack.databaseErrorAlert.showAndWait();
+			}
+		});
+
+		t.setDaemon(true);
+		t.setName("write " +name+ " to DB");
+		t.start();
 	}
 
 
@@ -984,15 +1155,20 @@ public class MainWindowController
 	 * instead of an event driven approach because it is anticipated that outside / untracked changes to the 
 	 * database can be made without warning, and we would like to register these <p/>
 	 * 
-	 * As of now, this only updates the queue table
 	 */
 	private Runnable uiUpdateTask = new Runnable() {
 		@Override public void run() 
 		{
-			if(!currentQueue.isFocused()) // only run if we aren't focused
+			// we may add updating the queue table back, but as it stands it doesn't play nice with things like sorting
+			if(!currentQueue.isFocused()) // only run if we aren't being clicked on
 				readQueueToTable();
+
+			// update the variables entries
+			readVars();
 		}
 	};
+
+
 
 
 

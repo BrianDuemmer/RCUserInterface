@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import application.Main;
+import application.Dystrack;
 import db.RCTables;
 
 public class Rating 
@@ -25,10 +25,11 @@ public class Rating
 	public Rating(String songID)
 	{
 		try {
-			PreparedStatement ps = Main.db.getDb().prepareStatement("SELECT rating_pct, rating_num FROM " +RCTables.playlistTable.getName()+ " WHERE song_id=?;");
+			RCTables.playlistTable.verifyExists(Dystrack.db.getDb());
+			PreparedStatement ps = Dystrack.db.getDb().prepareStatement("SELECT rating_pct, rating_num FROM " +RCTables.playlistTable.getName()+ " WHERE song_id=?;");
 			ps.setString(1, songID);
 			
-			ResultSet rs = Main.db.execRaw(ps);
+			ResultSet rs = Dystrack.db.execRaw(ps);
 			
 			if(rs.next())
 			{
@@ -36,6 +37,7 @@ public class Rating
 				this.num = rs.getInt(2);
 			} else {System.err.println("No rating info found for songID "+songID); }
 			
+			rs.close();
 		} catch (SQLException e) 
 		{
 			System.err.println("Failed to extract rating information!");

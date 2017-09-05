@@ -4,7 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import application.Main;
+import application.Dystrack;
 import db.RCTables;
 
 public class Song 
@@ -13,7 +13,7 @@ public class Song
 	private String ostName = "";
 	private String franchiseName = "";
 	private String songID = "";
-	private int length = -1;
+	private double length = -1;
 
 	public Song(String songName, String ostName) 
 	{
@@ -21,7 +21,7 @@ public class Song
 		this.ostName = ostName;
 
 		this.songID = getSongID();
-		this.length = getLength();
+		this.length = 0;
 	}
 
 
@@ -39,19 +39,20 @@ public class Song
 		ResultSet rs;
 
 		try {
-			RCTables.playlistTable.verifyExists(Main.db.getDb());
+			RCTables.playlistTable.verifyExists(Dystrack.db.getDb());
 
-			PreparedStatement ps = Main.db.getDb().prepareStatement(sql);
+			PreparedStatement ps = Dystrack.db.getDb().prepareStatement(sql);
 			ps.setString(1, songID);
-			rs = Main.db.execRaw(ps);
+			rs = Dystrack.db.execRaw(ps);
 
 			if(rs.next()) // only proceed if there is a record
 			{
 				this.songName = rs.getString("song_name");
 				this.ostName = rs.getString("ost_name");
-				this.length = rs.getInt("song_length");
+				this.length = rs.getDouble("song_length");
 			} else { System.err.println("Failed to find songID " +songID+ " in playlist table. Try running a playlist regen!"); }
 
+			rs.close();
 		} catch (SQLException e) 
 		{
 			System.err.println("Failed to construct song from song_id");
@@ -61,7 +62,7 @@ public class Song
 
 
 
-	public Song(String songName, String ostName, int length, String franchiseName) 
+	public Song(String songName, String ostName, double length, String franchiseName) 
 	{
 		this.songName = songName;
 		this.ostName = ostName;
@@ -97,45 +98,52 @@ public class Song
 		this.franchiseName = franchiseName;
 	}
 
-	
-	
-	
+
+
+
 	/**
 	 * Fetches the length, either one that's stored, or if one isn't stored in here, fetch it from the database
 	 */
-	public int getLength() 
+	public double getLength() 
 	{
 		if(songID.isEmpty())
 			getSongID();
 
-		// Extract the songID from the playlist table
-		RCTables.playlistTable.verifyExists(Main.db.getDb());
-		String sql = "SELECT song_length FROM " +RCTables.playlistTable.getName()+ " WHERE song_id = ?  COLLATE NOCASE;";
-		ResultSet rs;
-
-		try 
+		if(this.length == 0)
 		{
-			PreparedStatement ps = Main.db.getDb().prepareStatement(sql);
-			ps.setString(1, songID);
+			// Extract the songID from the playlist table
+			RCTables.playlistTable.verifyExists(Dystrack.db.getDb());
+			String sql = "SELECT song_length FROM " +RCTables.playlistTable.getName()+ " WHERE song_id = ?  COLLATE NOCASE;";
+			ResultSet rs;
 
-			rs = Main.db.execRaw(ps);
-
-			if(rs.next())
+			try 
 			{
-				this.length = rs.getInt(1);
-			} 
-			else { System.err.println("Could not find length given songID " +songID); }
+				PreparedStatement ps = Dystrack.db.getDb().prepareStatement(sql);
+				ps.setString(1, songID);
 
-		} catch (SQLException e) 
-		{
-			System.err.println("Could not find length given songID " +songID);
-			e.printStackTrace();
+				rs = Dystrack.db.execRaw(ps);
+
+				if(rs.next())
+				{
+					this.length = rs.getDouble(1);
+				} 
+				else { System.err.println("Could not find length given songID " +songID); }
+				
+				rs.close();
+			} catch (SQLException e) 
+			{
+				System.err.println("Could not find length given songID " +songID);
+				e.printStackTrace();
+			}
 		}
 
 		return length;
 	}
+	
+	
+	
 
-	public void setLength(int length) {
+	public void setLength(double length) {
 		this.length = length;
 	}
 
@@ -149,24 +157,25 @@ public class Song
 		if(songID.isEmpty())
 		{
 			// Extract the songID from the playlist table
-			RCTables.playlistTable.verifyExists(Main.db.getDb());
+			RCTables.playlistTable.verifyExists(Dystrack.db.getDb());
 			String sql = "SELECT song_id FROM " +RCTables.playlistTable.getName()+ " WHERE song_name = ? COLLATE NOCASE AND ost_name = ? COLLATE NOCASE;";
 			ResultSet rs;
 
 			try 
 			{
-				PreparedStatement ps = Main.db.getDb().prepareStatement(sql);
+				PreparedStatement ps = Dystrack.db.getDb().prepareStatement(sql);
 				ps.setString(1, songName);
 				ps.setString(2, ostName);
 
-				rs = Main.db.execRaw(ps);
+				rs = Dystrack.db.execRaw(ps);
 
 				if(rs.next())
 				{
 					this.songID = rs.getString("song_id");
 				} 
 				else { System.err.println("Could not find Song_id given name " +songName+ " and OST " +ostName); }
-
+				
+				rs.close();
 			} catch (SQLException e) 
 			{
 				System.err.println("Could not find Song_id given name " +songName+ " and OST " +ostName);
@@ -175,6 +184,33 @@ public class Song
 		}
 
 		return songID;
+	}
+	
+	
+	
+	
+	/**
+	 * Does a simple random selection from the playlist to get a 
+	 * random song
+	 */
+	public static Song getUniformRandom()
+	{
+		RCTables.playlistTable.verifyExists(Dystrack.db.getDb());
+		String sql = "SELECT song_id FROM " +RCTables.playlistTable.getName()+ " ORDER BY RANDOM() LIMIT 1";
+		Song s = null;
+		
+		try {
+			ResultSet rs = Dystrack.db.execRaw(sql);
+			rs.next();
+			s= new Song(rs.getString(1));
+			
+			rs.close();
+		} catch (SQLException e) {
+			System.err.println("RNGsus failed to take the wheel!");
+			e.printStackTrace();
+		}
+		
+		return s;
 	}
 
 

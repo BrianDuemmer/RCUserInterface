@@ -1,4 +1,5 @@
 package db;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -15,7 +16,7 @@ import javax.sound.sampled.AudioSystem;
 
 import org.farng.mp3.MP3File;
 
-import application.Main;
+import application.Dystrack;
 
 public class PLGenDB 
 {
@@ -79,7 +80,8 @@ public class PLGenDB
 			String songID = ost.getName() +"\\"+ f.getName();
 			
 			// insert into database
-			PreparedStatement ps = Main.db.getDb().prepareStatement("INSERT INTO playlist VALUES(?, ?, ?, ?, ?, ?)");
+			RCTables.playlistTable.verifyExists(Dystrack.db.getDb());
+			PreparedStatement ps = Dystrack.db.getDb().prepareStatement("INSERT INTO playlist VALUES(?, ?, ?, ?, ?, ?)");
 			ps.setString(1, songName);
 			ps.setString(2, ostName);
 			ps.setInt(3, dur);
@@ -87,7 +89,7 @@ public class PLGenDB
 			ps.setInt(5, 0);
 			ps.setString(6, songID);
 			
-			Main.db.execRaw(ps);
+			Dystrack.db.execRaw(ps);
 			System.out.println("Sucessfully added song " +f.getAbsolutePath());
 		} 
 		catch (Exception e) { System.out.println("Error reading MP3File " +f.getAbsolutePath()); e.printStackTrace(); }
@@ -100,7 +102,7 @@ public class PLGenDB
 	
 	public static void initDB()
 	{
-			RCTables.playlistTable.verifyExists(Main.db.getDb());
+			RCTables.playlistTable.verifyExists(Dystrack.db.getDb());
 			System.out.println("Successfully created database");
 	}
 	
